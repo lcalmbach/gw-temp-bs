@@ -29,23 +29,39 @@ def plot_map(df: pd.DataFrame, settings: dict, categories: dict={}):
             ).add_to(m)
     folium_static(m)
 
-def time_series_chart(df, settings, regression:bool=True):
-        #line = alt.Chart(df_line).mark_line(color= 'red').encode(
-        #    x= 'x',
-        #    y= 'y'
-        #    )
-        
-        chart = alt.Chart(df).mark_line(width = 20, point=alt.OverlayMarkDef(color='blue')).encode(
-            x= alt.X('sampling_date:T', scale=alt.Scale(domain=settings['x_domain'])),
-            y= alt.Y('temperature:Q', scale=alt.Scale(domain=settings['y_domain'])),
-            tooltip=['sampling_date', 'temperature']    
+def line_chart(df, settings, regression:bool=True):
+    title = settings['title'] if 'title' in settings else ''
+    chart = alt.Chart(df).mark_line(width = 2, clip=True).encode(
+            #x= alt.X(settings['x']),
+            y= alt.Y(settings['y'], scale=alt.Scale(domain=settings['y_domain'])),
+            x= alt.X(settings['x'], scale=alt.Scale(domain=settings['x_domain'])),
+            #y= alt.Y(settings['y']),
+            tooltip=settings['tooltip']    
         )
-        if regression:
-            line = chart.transform_regression('sampling_date', 'temperature').mark_line()
-            plot = (chart + line).properties(width=settings['width'], height=settings['height'], title = settings['title'])
-        else:
-            plot = chart.properties(width=settings['width'], height=settings['height'], title = settings['title'])
-        st.altair_chart(plot)
+    if regression:
+        line = chart.transform_regression('year', 'temperature (°C)').mark_line()
+        plot = (chart + line).properties(width=settings['width'], height=settings['height'], title = title)
+    else:
+        plot = chart.properties(width=settings['width'], height=settings['height'], title = title)
+    st.altair_chart(plot)
+        
+def time_series_chart(df, settings, regression:bool=True):
+    #line = alt.Chart(df_line).mark_line(color= 'red').encode(
+    #    x= 'x',
+    #    y= 'y'
+    #    )
+    title = settings['title'] if 'title' in settings else ''
+    chart = alt.Chart(df).mark_line(width = 20, point=alt.OverlayMarkDef(color='blue')).encode(
+        x= alt.X('sampling_date:T', scale=alt.Scale(domain=settings['x_domain'])),
+        y= alt.Y('temperature:Q', scale=alt.Scale(domain=settings['y_domain'])),
+        tooltip=['sampling_date', 'temperature']    
+    )
+    if regression:
+        line = chart.transform_regression('sampling_date', 'temperature').mark_line()
+        plot = (chart + line).properties(width=settings['width'], height=settings['height'], title = title)
+    else:
+        plot = chart.properties(width=settings['width'], height=settings['height'], title = title)
+    st.altair_chart(plot)
 
 def heatmap(df, settings):
     chart = alt.Chart(df).mark_rect().encode(

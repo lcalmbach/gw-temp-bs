@@ -17,7 +17,7 @@ APP_NAME = 'groundwater.bs'
 APP_ICON="💧"
 
 
-MENU_OPTIONS = ['About', 'Temperature']
+MENU_OPTIONS = ['About', 'Temperature Trends']
 DATA_FILE = './temperature_data.pkl'
 LOTTIE_URL = "https://assets5.lottiefiles.com/packages/lf20_ZQqYEY.json"
 LOTTIE_URL = "https://assets1.lottiefiles.com/packages/lf20_fwlx9xtz.json"

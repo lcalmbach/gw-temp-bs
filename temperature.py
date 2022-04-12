@@ -9,8 +9,6 @@ from scipy import stats
 from temperature_texts import texts
 import helper
 import plots
-import scipy.stats
-
 
 MIN_OBSERVATIONS_FOR_MK = 10
 
@@ -176,7 +174,7 @@ class Analysis():
             min_date = date(min_date.year, min_date.month, min_date.day)
             x = list( (df['sampling_date'] - df['sampling_date'].min())  / np.timedelta64(1,'D'))
             y = list(df['temperature'])
-            linreg = scipy.stats.linregress(x, y)
+            linreg = stats.linregress(x, y)
             days_to_future_date = (future_date - min_date).days
             extrapol_temperature = linreg.intercept + days_to_future_date * linreg.slope
             row = pd.DataFrame({'station': station, 'start_date': min_date, 'r-value': linreg.rvalue, 'intercept':linreg.intercept, 'slope (°C/yr)':linreg.slope*365, '10yr prediction': extrapol_temperature }, index=[0])
@@ -193,6 +191,12 @@ class Analysis():
         df = df[['station', 'latitude','longitude', 'depth', 'temp_min', 'temp_max', 'temp_mean', 'temp_count']]
         df["latitude"] = df["latitude"].astype("float")
         df["longitude"] = df["longitude"].astype("float")
+        return df
+
+    def get_surface_temp_data(self):
+        df = pd.read_csv('./surface_temp.csv',sep = '\t')
+        df = df[df['year']>1992]
+        df.sort_values(by='year')
         return df
 
     def report(self):
@@ -241,6 +245,13 @@ class Analysis():
             trends['no_trend'] = trends['num'] - trends['increasing'] - trends['decreasing']
             return trends
 
+        def show_surface_temp_chart(df):
+            settings = {"x": 'year:Q', "y": "temperature (°C):Q","width":800,"height":200}
+            settings['x_domain'] = [1993, int(df['year'].max())] 
+            settings['y_domain'] = [7,14] 
+            settings['tooltip'] = ["year", "temperature (°C)"]
+            plots.line_chart(df, settings, True)
+
         station_data = self.get_station_data()
         st.markdown(texts['intro'], unsafe_allow_html=True)
         self.show_location_map(station_data)
@@ -262,6 +273,13 @@ class Analysis():
         df = pd.merge(station_data, result_table, left_on='station', right_on='station') 
         self.show_trend_distribution_map(df)
         st.markdown(helper.font_size_small(texts['fig2']), unsafe_allow_html=True)
+
+        #surface temperature
+        df = self.get_surface_temp_data()
+        surface_linreg = stats.linregress(list(df['year']), list(df['temperature (°C)']))
+        st.markdown(texts['surface_temperature'].format(surface_linreg.slope), unsafe_allow_html=True)
+        show_surface_temp_chart(df)
+        st.markdown(helper.font_size_small(texts['fig3']), unsafe_allow_html=True)
 
         #heatmap
         st.markdown(texts['result_heatmap'], unsafe_allow_html=True)
@@ -292,7 +310,7 @@ class Analysis():
         
         settings = {'height':500, 'selection_mode':'single', 'fit_columns_on_grid_load': False}
         selected = helper.show_table(regr_table, [], settings)
-        st.markdown(texts['conclusion'], unsafe_allow_html=True)
+        st.markdown(texts['conclusion'].format(min_slope, max_slope,surface_linreg.slope), unsafe_allow_html=True)
 
 
     def show_menu(self):
