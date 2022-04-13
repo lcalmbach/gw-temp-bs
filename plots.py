@@ -75,10 +75,10 @@ def time_series_chart(df, settings, regression:bool=True):
     st.altair_chart(plot)
 
 def heatmap(df, settings):
-    chart = alt.Chart(df).mark_rect().encode(
+    plot = alt.Chart(df).mark_rect().encode(
         x=settings['x'],
         y=settings['y'],
         color=settings['color'],
         tooltip=settings['tooltip']
     ).properties(title = settings['title'])
-    st.altair_chart(chart)
+    st.altair_chart(plot)
