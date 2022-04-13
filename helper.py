@@ -65,7 +65,20 @@ def show_table(df: pd.DataFrame, cols, settings):
     selected_df = pd.DataFrame(selected)
     return selected_df
 
-def show_legend(texts:list, legend_type:str, id:int, args:list=[]):
+def show_legend(texts:list, legend_type:str, id:int, args:list=[])->int:
+    """
+    writes a legend statement for a specified figure or table index and 
+    returns the index for the next figure or table.
+
+    Args:
+        texts (list): all legends for this type (figure or table)
+        legend_type (str): _description_
+        id (int): figure or table index in text, the listindex is therefore id-1
+        args (list, optional): list of arguments to be added to the format statement.
+
+    Returns:
+        int: _description_
+    """
     text = texts[legend_type][id-1].format(id, *args)
     st.markdown(font_size_small(text), unsafe_allow_html=True)
     return id + 1

@@ -202,6 +202,10 @@ class Analysis():
         return df
 
     def report(self):
+        """
+        This function generates the temperature report with all texts, tables and figures
+        """
+        
         def get_result_table(station_data):
             result = pd.DataFrame()
             valid_stations = list(station_data[station_data['temp_count'] >= MIN_OBSERVATIONS_FOR_MK]['station'])
