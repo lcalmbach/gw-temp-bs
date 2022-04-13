@@ -64,3 +64,8 @@ def show_table(df: pd.DataFrame, cols, settings):
     selected = grid_response['selected_rows']
     selected_df = pd.DataFrame(selected)
     return selected_df
+
+def show_legend(texts:list, legend_type:str, id:int, args:list=[]):
+    text = texts[legend_type][id-1].format(id, *args)
+    st.markdown(font_size_small(text), unsafe_allow_html=True)
+    return id + 1

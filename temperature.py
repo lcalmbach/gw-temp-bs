@@ -11,10 +11,13 @@ import helper
 import plots
 
 MIN_OBSERVATIONS_FOR_MK = 10
+FIGURE = 'fig'
+TABLE = 'tab'
 
 class Analysis():
     def __init__(self, data):
         self.data = data
+        self.data['year'] = self.data['sampling_date'].dt.year
         self.stations = data['station'].unique()
     
     def get_line_df(self, slope, intercept, min_x, max_x):
@@ -116,7 +119,6 @@ class Analysis():
         df = self.data
         if stations != []:
             df = df[df['station'].isin(stations)]
-        df['year'] = df['sampling_date'].dt.year
         df = df[['station','year', 'temperature', 'sampling_depth']].groupby(['station','year']).agg(['mean', 'count']).reset_index()
         df.columns = ['station','year','temperature','observations', 'sampling_depth', 'cnt']
         df = df.sort_values(by='sampling_depth', ascending=False)
@@ -217,9 +219,9 @@ class Analysis():
 
         def show_table1(df, all_data):
             cols = st.columns(2)
+            tab_cols = [{'name':'p-value', 'hide':False, 'type':["numericColumn","numberColumnFilter","customNumericFormat"], 'precision':4}]
             with cols[0]:
                 settings = {'height':500, 'selection_mode':'single', 'fit_columns_on_grid_load': False}
-                tab_cols = []
                 selected = helper.show_table(df, tab_cols, settings)
             with cols[1]:
                 if len(selected)>0:
@@ -234,7 +236,6 @@ class Analysis():
                     plots.time_series_chart(df, settings, regression=True)
                     df = df[['sampling_date', 'temperature']]
                     settings = {'height':250, 'selection_mode':'single', 'fit_columns_on_grid_load': False}
-                    tab_cols = []
                     selected = helper.show_table(df, tab_cols, settings)
         
         def get_trends(df):
@@ -251,12 +252,27 @@ class Analysis():
             settings['y_domain'] = [7,14] 
             settings['tooltip'] = ["year", "temperature (°C)"]
             plots.line_chart(df, settings, True)
+        
+        def get_compare_temperatures_data(df_gw, df_sw):
+            df_gw = df_gw[['year', 'temperature']].groupby(['year']).agg(['mean']).reset_index()
+            df_merge = pd.merge(df_gw, df_sw, left_on='year', right_on='year') 
+            df_merge.columns = ['year','dummy','groundwater (°C)', 'surface (°C)']
+            df_merge = df_merge [['year','groundwater (°C)', 'surface (°C)']]
+            return df_merge
 
+        fig_num = 1
+        tab_num = 1
+
+        # intro
         station_data = self.get_station_data()
         st.markdown(texts['intro'], unsafe_allow_html=True)
         self.show_location_map(station_data)
-        st.markdown(helper.font_size_small(texts['fig1']), unsafe_allow_html=True)
+        fig_num = helper.show_legend(texts, FIGURE, fig_num) 
+        
+        # methodology
         st.markdown(texts['eval'], unsafe_allow_html=True)
+        
+        # results
         result_table = get_result_table(station_data)
         trends = get_trends(result_table)
         st.markdown(texts['result'].format(
@@ -265,22 +281,31 @@ class Analysis():
             trends['no_trend'], 
             trends['decreasing']), unsafe_allow_html=True)
         show_table1(result_table, self.data)
-        tab_legend = texts['tab1'].format(MIN_OBSERVATIONS_FOR_MK)
-        st.markdown(helper.font_size_small(tab_legend), unsafe_allow_html=True)
-        st.markdown(texts['result_map'], unsafe_allow_html=True)
+        args = [MIN_OBSERVATIONS_FOR_MK]
+        tab_num = helper.show_legend(texts,TABLE,tab_num, args)
         
         # show a map showing the spatial distribution
+        st.markdown(texts['result_map'], unsafe_allow_html=True)
         df = pd.merge(station_data, result_table, left_on='station', right_on='station') 
         self.show_trend_distribution_map(df)
-        st.markdown(helper.font_size_small(texts['fig2']), unsafe_allow_html=True)
+        fig_num = helper.show_legend(texts, FIGURE, fig_num)
 
         #surface temperature
         df = self.get_surface_temp_data()
         surface_linreg = stats.linregress(list(df['year']), list(df['temperature (°C)']))
         st.markdown(texts['surface_temperature'].format(surface_linreg.slope), unsafe_allow_html=True)
         show_surface_temp_chart(df)
-        st.markdown(helper.font_size_small(texts['fig3']), unsafe_allow_html=True)
-
+        fig_num = helper.show_legend(texts, FIGURE, fig_num)
+        compare_data = get_compare_temperatures_data(self.data, df)
+        settings = {'x': 'groundwater (°C):Q','y':'surface (°C):Q', 
+            'domain': [9,18],
+            'color': 'year:Q',
+            'tooltip':['year','groundwater (°C)','surface (°C)'], 'width': 400, 'height':400}
+        
+        st.markdown(texts['surface_temperature_compare_to_groundwater'].format(surface_linreg.slope), unsafe_allow_html=True)
+        plots.scatter_plot(compare_data, settings)
+        fig_num = helper.show_legend(texts, FIGURE, fig_num)
+        
         #heatmap
         st.markdown(texts['result_heatmap'], unsafe_allow_html=True)
         df = self.get_heat_map_data([])
@@ -288,8 +313,9 @@ class Analysis():
             'color':'temperature:Q', 'tooltip':['station','year','sampling_depth','temperature','observations']}
         settings['title']=f'Heatmap (all stations with at least one temperature observation)'
         plots.heatmap(df, settings)
-        st.markdown(helper.font_size_small(texts['fig3']), unsafe_allow_html=True)
+        fig_num = helper.show_legend(texts,FIGURE,fig_num)
         
+        # prediction
         valid_stations = list(station_data[station_data['temp_count'] >= MIN_OBSERVATIONS_FOR_MK]['station'])
         regr_table = self.get_regression_table(valid_stations)
         regr_table_pos = regr_table[regr_table['slope (°C/yr)']>0]
@@ -307,12 +333,15 @@ class Analysis():
             max_predict,
             mean_predict), unsafe_allow_html=True)
         
-        
         settings = {'height':500, 'selection_mode':'single', 'fit_columns_on_grid_load': False}
-        selected = helper.show_table(regr_table, [], settings)
+        tab_cols = [{'name':'r-value', 'hide':False, 'type':["numericColumn","numberColumnFilter","customNumericFormat"], 'precision':2}]
+        tab_cols.append({'name':'intercept', 'hide':False, 'type':["numericColumn","numberColumnFilter","customNumericFormat"], 'precision':2})
+        tab_cols.append({'name':'slope (°C/yr)', 'hide':False, 'type':["numericColumn","numberColumnFilter","customNumericFormat"], 'precision':3})
+        tab_cols.append({'name':'10yr prediction', 'hide':False, 'type':["numericColumn","numberColumnFilter","customNumericFormat"], 'precision':2})
+        selected = helper.show_table(regr_table, tab_cols, settings)
+        tab_num = helper.show_legend(texts, TABLE, tab_num, [MIN_OBSERVATIONS_FOR_MK])
         st.markdown(texts['conclusion'].format(min_slope, max_slope,surface_linreg.slope), unsafe_allow_html=True)
-
-
+        
     def show_menu(self):
         MENU_OPTIONS = ['Report','Mann Kendall Test', 'Heatmap']
         menu_item = st.sidebar.selectbox('Analysis', options=MENU_OPTIONS)

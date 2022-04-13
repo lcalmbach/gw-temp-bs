@@ -33,8 +33,8 @@ def line_chart(df, settings, regression:bool=True):
     title = settings['title'] if 'title' in settings else ''
     chart = alt.Chart(df).mark_line(width = 2, clip=True).encode(
             #x= alt.X(settings['x']),
-            y= alt.Y(settings['y'], scale=alt.Scale(domain=settings['y_domain'])),
             x= alt.X(settings['x'], scale=alt.Scale(domain=settings['x_domain'])),
+            y= alt.Y(settings['y'], scale=alt.Scale(domain=settings['y_domain'])),
             #y= alt.Y(settings['y']),
             tooltip=settings['tooltip']    
         )
@@ -44,7 +44,18 @@ def line_chart(df, settings, regression:bool=True):
     else:
         plot = chart.properties(width=settings['width'], height=settings['height'], title = title)
     st.altair_chart(plot)
-        
+
+def scatter_plot(df, settings):
+    title = settings['title'] if 'title' in settings else ''
+    chart = alt.Chart(df).mark_circle(size=60).encode(
+        x= alt.X(settings['x'], scale=alt.Scale(domain=settings['domain'])),
+        y= alt.Y(settings['y'], scale=alt.Scale(domain=settings['domain'])),
+        tooltip=settings['tooltip'],
+        color=settings['color']
+    ).interactive()
+    plot = chart.properties(width=settings['width'], height=settings['height'], title = title)
+    st.altair_chart(plot)
+
 def time_series_chart(df, settings, regression:bool=True):
     #line = alt.Chart(df_line).mark_line(color= 'red').encode(
     #    x= 'x',
