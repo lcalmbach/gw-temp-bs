@@ -51,7 +51,7 @@ def scatter_plot(df, settings):
         x= alt.X(settings['x'], scale=alt.Scale(domain=settings['domain'])),
         y= alt.Y(settings['y'], scale=alt.Scale(domain=settings['domain'])),
         tooltip=settings['tooltip'],
-        color=settings['color']
+        color=alt.Color(settings['color'], sort="descending", scale=alt.Scale(scheme='redblue'))
     ).interactive()
     plot = chart.properties(width=settings['width'], height=settings['height'], title = title)
     st.altair_chart(plot)

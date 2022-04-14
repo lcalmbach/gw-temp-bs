@@ -61,14 +61,14 @@ class Analysis():
                 'Sen slope'
             ]
             values = [f"{df['sampling_date'].min().year} to {df['sampling_date'].max().year}",
-                df['sampling_depth'].min(),
-                df['temperature'].min(),
-                df['temperature'].max(),
-                df['temperature'].mean(),
-                df['temperature'].std(),
-                result.trend, 
-                result.p, 
-                result.slope
+                f"{df['sampling_depth'].min():.2f}",
+                f"{df['temperature'].min():.2f}",
+                f"{df['temperature'].max():.2f}",
+                f"{df['temperature'].mean():.2f}",
+                f"{df['temperature'].std():.2f}",
+                result.trend,
+                f"{result.p:.2E}",
+                f"{result.slope:.4f}"
             ]
             return pd.DataFrame({'Parameter': keys, 'Value':values})
 
@@ -79,6 +79,8 @@ class Analysis():
             ok = ok or (display == DISPLAY_OPTIONS[3] and result.trend=='no trend')
             return ok
 
+        with st.expander("Info", expanded=True):
+            st.markdown(texts['mk-menu'])
         DISPLAY_OPTIONS = ['all results', 'increasing', 'decreasing', 'no trend']
         stations = self.select_stations()
         minimum_number_of_obs = st.sidebar.number_input('Min number of observations', min_value=0, max_value = 20, value = 5)
@@ -124,18 +126,6 @@ class Analysis():
         df = df.sort_values(by='sampling_depth', ascending=False)
         return df
 
-    def show_heatmap(self):
-        stations = self.select_stations()
-        df = self.get_heat_map_data(stations)
-        settings = {'x': 'year:O','y':alt.Y('station:O',sort=alt.EncodingSortField(field='sampling_temperature', order='ascending')),
-            'color':'temperature:Q', 'tooltip':['station','year','sampling_depth','temperature','observations']}
-        station_num = len(df['station'].unique())
-        settings['title'] = f'Heatmap for average temperatures for {station_num} stations'
-        plots.heatmap(df, settings)
-        
-        min_depth = df['sampling_depth'].min()
-        max_depth = df['sampling_depth'].max()
-        st.markdown(texts['analysis_heatmap'].format(min_depth,max_depth))
 
     def show_location_map(self, station_data):
         def get_tooltip_html():
@@ -205,7 +195,7 @@ class Analysis():
         """
         This function generates the temperature report with all texts, tables and figures
         """
-        
+
         def get_result_table(station_data):
             result = pd.DataFrame()
             valid_stations = list(station_data[station_data['temp_count'] >= MIN_OBSERVATIONS_FOR_MK]['station'])
@@ -347,12 +337,10 @@ class Analysis():
         st.markdown(texts['conclusion'].format(min_slope, max_slope,surface_linreg.slope), unsafe_allow_html=True)
         
     def show_menu(self):
-        MENU_OPTIONS = ['Report','Mann Kendall Test', 'Heatmap']
+        MENU_OPTIONS = ['Report','Mann Kendall Test']
         menu_item = st.sidebar.selectbox('Analysis', options=MENU_OPTIONS)
 
         if menu_item == MENU_OPTIONS[0]:
             self.report()
         elif menu_item == MENU_OPTIONS[1]:
             self.show_mann_kendall()
-        elif menu_item == MENU_OPTIONS[2]:
-            self.show_heatmap()
