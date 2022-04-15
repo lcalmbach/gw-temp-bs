@@ -230,7 +230,7 @@ class Analysis():
                     plots.time_series_chart(df, settings, regression=True)
                     df = df[['sampling_date', 'temperature']]
                     settings = {'height':250, 'selection_mode':'single', 'fit_columns_on_grid_load': False}
-                    selected = helper.show_table(df, tab_cols, settings)
+                    selected = helper.show_table(df, [], settings)
         
         def get_trends(df):
             trends = {}

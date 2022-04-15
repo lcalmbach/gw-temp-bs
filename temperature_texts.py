@@ -14,7 +14,7 @@ The Office for environmental protection of Basel-Stadt (AUE) has published 30 ye
 This study uses a combination of statistical methods and visual inspection for classifying the temperature trends in each station. In a first step, all stations with less than 10 observations were discarded. Then, the Mann-Kendall trend test estimator was calculated for each station. 
 This test allows to determine whether a time series has a monotonic upward or downward trend. Some details on the test are given in the paragraph below. Time series diagrams were generated for each station, and a linear regression was conducted on all-time series. Yearly surface temperature values were also compiled in order to study the correlation of tempearture above and below ground surface.
 
-### Mann-Kendall test
+### Mann-Kendall Test
 The Mann-Kendall test is a statistical hypothesis test, where the h0-hypothesis assumes that there is no trend in the data. The calculated estimator to accept or reject the hypothesis is based on the slopes that can be constructed between data points: if the number of positive slopes exceeds the number of negative slopes, a positive trend is more likely. The test assumes that in a time series without trend, the number of positive and negative slopes should be similar, if either positive or negative slopes clearly dominate, the hypothesis is rejected and therefore the alternative hypothesis of an increasing or decreasing trend is accepted. Many variations exist for the Mann-Kendall test, introducing various corrections for seasonality, co-correlation, and others. We applied the original Mann-Kendall test and used the python package *pyMannKendall* ([Hussain et al., (2019)](https://joss.theoj.org/papers/10.21105/joss.01556)) to calculate the Mann-Kendall trend estimators.
 """,
 
@@ -33,10 +33,10 @@ The Mann-Kendall test is a statistical hypothesis test, where the h0-hypothesis 
 
     ],
 'result': """## Results
-### Statistical tests (Mann-Kendall)
+### Statistical tests
 Mann-Kendall tests have been performed on all stations having a minimum of 10 temperature observations. As shown in table 1, {0} stations comprised the requested number of observations, {1} were identified as having an increasing trend, and {2} had no significant trend. Among the stations having no trend, visual inspection reveals that the overall trend is generally increasing; however, the trend is not sufficiently strong to pass the Mann-Kendall test. This is also confirmed by the positive slope of the linear regression line. Only {3} stations were found to have a decreasing trend. Table 1 generates the corresponding time series diagrams when a station is marked using the mouse cursor.""",
 
-'result_map': """### Spatial distribution
+'result_map': """### Spatial Distribution
 Figure 2 shows the spatial distribution of the different trend test results: *increasing* (orange), *decreasing* (blue), and *no trend* (gray). This map does not allow to delineate ares of a common trend pattern. The difference of trend and average temperature, that can be observed in neighbouring stations suggests that manmade processes may impact the natural groundwater. Further knowledge of the local groundwater flow system should be included in order to interpret the spatial distribution of temperature time series.
 """,
 
@@ -52,7 +52,7 @@ Overall, the heatmap allows to apreciate the data density, the five year monitor
 """,
 
 'prediction': """### 10 Year Groundwater Temperature Prediction
-A linear regression was conducted on all stations having a minimum number of {} temperature observations. Increasing trend rates are estimated using the intercept and slope of the linear regression. slopes range from {:.2f} to {:.2f} °C/yr with an average value of {:.2f} °C/yr. Extrapolating the linear trend over the next ten years therefore, may lead to a groundwater temperature rise of between {:.1f} and {:.1f} °C with an average of {:.1f} °C.
+A linear regression was conducted on all stations having a minimum number of {} temperature observations. Increasing trend rates are estimated using the intercept and slope of the linear regression. slopes range from {:.2f} to {:.2f} °C/yr with an average value of {:.2f} °C/yr. Extrapolating the linear trend over the next ten years therefore, may lead to a groundwater temperature of between {:.1f} and {:.1f} °C and an average of {:.1f} °C.
 """,
 
 'conclusion': """### Conclusion
