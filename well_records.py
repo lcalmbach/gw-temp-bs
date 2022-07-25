@@ -29,7 +29,7 @@ class Analysis():
         self.monitoring_stations = list(self.wl_data['stationid'].unique())
      
     def get_records(self):
-        df = pd.read_csv("./data/100182.csv", sep=';')
+        df = pd.read_csv("./100182.csv", sep=';')
         df[['Lat', 'Long']] = df['Geo Point'].str.split(',', expand=True)
         df['Bohrtiefe (m)'] = df['Z-Koordinate vom Top'] - df['Z-Koordinate von der Basis']
         df['Vollständige Laufnummer'] = df['Vollständige Laufnummer'].astype('str')
