@@ -9,10 +9,10 @@ import helper
 import temperature 
 import well_records
 
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 __author__ = 'Lukas Calmbach'
 __author_email__ = 'lcalmbach@gmail.com'
-VERSION_DATE = '2022-04-09'
+VERSION_DATE = '2022-07-25'
 GIT_REPO = 'https://github.com/lcalmbach/gw-temp-bs'
 APP_NAME = 'groundwater.bs'
 APP_ICON="💧"
