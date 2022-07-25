@@ -59,7 +59,7 @@ def show_table(df: pd.DataFrame, cols, settings):
         update_mode=settings['update_mode'],
         fit_columns_on_grid_load=settings['fit_columns_on_grid_load'],
         allow_unsafe_jscode=True, 
-        enable_enterprise_modules=True,
+        enable_enterprise_modules=False,
         )
     selected = grid_response['selected_rows']
     selected_df = pd.DataFrame(selected)

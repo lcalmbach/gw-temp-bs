@@ -120,7 +120,7 @@ class Analysis():
                         df =  df[df['Bohrtiefe (m)'] < depth]
                     else:
                         df =  df[df['Bohrtiefe (m)'] > depth]
-            fields = ['Vollständige Laufnummer', 'Art', 'Strasse', 'Hausummer', 'Oberkante Fels-Stratigraphie','Bohrtiefe (m)']
+            fields = ['Vollständige Laufnummer', 'Art', 'Strasse', 'Hausummer', 'Oberkante Fels-Stratigraphie','Bohrtiefe (m)', 'Long', 'Lat']
             df = df[fields]
         return df
     
@@ -197,7 +197,7 @@ class Analysis():
                     df = self.precip[['first_day_of_week','precip_sum']]
                     df = df.groupby(['first_day_of_week']).sum().reset_index()
                     df.columns=['date','precip_mm']
-                    settings={'title': f"Precipitation, Meteo Station Binningen", 'x':'date', 'y':'precip_mm', 'tooltip':['date', 'precip_mm'], 
+                    settings={'title': f"Precipitation, Meteo Station Binningen, aggregated by week", 'x':'date', 'y':'precip_mm', 'tooltip':['date', 'precip_mm'], 
                         'width':1000, 'height': 200, 'x_title': '', 'y_title': 'Precipitation (mm)'}
                     settings['x_domain'] = list(pd.to_datetime([date(start_year,1,1), date(end_year,12,31)]).astype(int) / 10 ** 6)
                     settings['size'] = bar_width(start_year, end_year)
@@ -210,8 +210,8 @@ class Analysis():
                     settings={'title': f"Rheinpegel, Kleinbasler Seite auf Höhe des Birs-Zuflusses", 'x':'date', 'y':'pegel', 'tooltip':['date', 'pegel'], 
                         'width':1000, 'height': 200, 'x_title': '', 'y_title': 'Water level (masl)'}
                     settings['x_domain'] = list(pd.to_datetime([date(start_year,1,1), date(end_year,12,31)]).astype(int) / 10 ** 6)
-                    min_y = int(df['pegel'].min())-1
-                    max_y = int(df['pegel'].max())+1
+                    min_y = int(df['pegel'].min()) - 1
+                    max_y = int(df['pegel'].max()) + 1
                     settings['y_domain'] = [min_y, max_y]
                     plots.time_series_line(df, settings)
 
@@ -232,8 +232,20 @@ class Analysis():
         st.markdown(f"#### {len(df)} records found")
         selected = helper.show_table(df, [], settings)
         if len(selected)>0:
-            station_sel = selected.iloc[0]['Vollständige Laufnummer']
+            selected = selected.iloc[0]
+            station_sel = selected['Vollständige Laufnummer']
+            
+
             self.show_record(station_sel)
+
+            # show map
+            settings={'title': f"Station location:", 'x':'Long', 'y':'Lat', 
+                'width':200, 'height': 200}
+            df = pd.DataFrame({'Long':[selected['Long']], 'Lat':[selected['Lat']]})
+            settings['midpoint'] = (selected['Lat'], selected['Long'] )
+            st.write(settings['title'])
+            plots.location_map(df, settings)
+            
 
     def show_menu(self):
         menu_options = ['Info', 'Well record', 'Water level plot']
