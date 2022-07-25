@@ -18,6 +18,7 @@ MIN_OBSERVATIONS_FOR_MK = 10
 FIGURE = 'fig'
 TABLE = 'tab'
 CURRENT_YEAR = int(date.today().strftime("%Y"))
+select_grid_fields = ['Vollständige Laufnummer', 'Art', 'Strasse', 'Hausummer', 'Oberkante Fels-Stratigraphie','Bohrtiefe (m)', 'Long', 'Lat']
 
 class Analysis():
     def __init__(self):
@@ -33,6 +34,7 @@ class Analysis():
         df[['Lat', 'Long']] = df['Geo Point'].str.split(',', expand=True)
         df['Bohrtiefe (m)'] = df['Z-Koordinate vom Top'] - df['Z-Koordinate von der Basis']
         df['Vollständige Laufnummer'] = df['Vollständige Laufnummer'].astype('str')
+        df.fillna('', inplace=True)
         # df[df['Bohrtiefe (m)'].isna()]['Bohrtiefe (m)'] = df['Terrain-Kote'] - df['Sohle-Kote']
        
         df = df.drop(['Geo Point', 'Geo Shape', 'Kanton', 'Klassifikation', 'Gemeinde bzw. Sektion'], axis=1)
@@ -120,8 +122,7 @@ class Analysis():
                         df =  df[df['Bohrtiefe (m)'] < depth]
                     else:
                         df =  df[df['Bohrtiefe (m)'] > depth]
-            fields = ['Vollständige Laufnummer', 'Art', 'Strasse', 'Hausummer', 'Oberkante Fels-Stratigraphie','Bohrtiefe (m)', 'Long', 'Lat']
-            df = df[fields]
+            df = df[select_grid_fields]
         return df
     
 
@@ -166,6 +167,7 @@ class Analysis():
 
         df = self.data
         df =  df[df['Vollständige Laufnummer'].isin(self.monitoring_stations)]
+        df = df[select_grid_fields]
         settings = {'height':250, 'selection_mode':'single', 'fit_columns_on_grid_load':False}
         st.markdown(f"#### {len(df)} records found")
         selected = helper.show_table(df, [], settings)
