@@ -7,6 +7,7 @@ from os.path import exists
 from about import About
 import helper
 import temperature 
+import well_records
 
 __version__ = '0.0.1'
 __author__ = 'Lukas Calmbach'
@@ -17,7 +18,7 @@ APP_NAME = 'groundwater.bs'
 APP_ICON="💧"
 
 
-MENU_OPTIONS = ['About', 'Temperature Trends']
+MENU_OPTIONS = ['About', 'Temperature Trends', 'Well records']
 DATA_FILE = './temperature_data.pkl'
 LOTTIE_URL = "https://assets5.lottiefiles.com/packages/lf20_ZQqYEY.json"
 LOTTIE_URL = "https://assets1.lottiefiles.com/packages/lf20_fwlx9xtz.json"
@@ -76,6 +77,8 @@ def main():
         app = About(data)
     elif menu_item==MENU_OPTIONS[1]:
         app = temperature.Analysis(data)
+    elif menu_item==MENU_OPTIONS[2]:
+        app = well_records.Analysis()
     app.show_menu()
     st.sidebar.markdown(APP_INFO, unsafe_allow_html=True)
 
