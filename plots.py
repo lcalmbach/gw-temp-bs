@@ -33,7 +33,7 @@ def location_map(df: pd.DataFrame, settings: dict):
     m = folium.Map(location=settings['midpoint'], zoom_start=ZOOM_START_DETAIL, width=400, height=400)
     for index, row in df.iterrows():
         folium.Marker(
-            [row['Lat'], row['Long']]
+            [row[settings['lat']], row[settings['long']]]
         ).add_to(m)
     folium_static(m)
 

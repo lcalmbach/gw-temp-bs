@@ -1,7 +1,6 @@
 from http.client import OK
 import streamlit as st
 import pandas as pd
-import pickle
 from os.path import exists
 
 from about import About
@@ -9,7 +8,7 @@ import helper
 import temperature 
 import well_records
 
-__version__ = '0.0.2'
+__version__ = '0.0.3'
 __author__ = 'Lukas Calmbach'
 __author_email__ = 'lcalmbach@gmail.com'
 VERSION_DATE = '2022-07-25'

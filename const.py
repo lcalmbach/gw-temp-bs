@@ -1,0 +1,1 @@
+S3_BUCKET = "lc-opendata01"

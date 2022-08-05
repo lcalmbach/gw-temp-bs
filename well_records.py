@@ -3,46 +3,53 @@ import streamlit.components.v1 as components
 import pandas as pd
 import altair as alt
 import numpy as np
-from st_aggrid import AgGrid
 from datetime import datetime, date, timedelta
 from scipy import stats
 from temperature_texts import texts
 import requests
 import json
-import io
 import helper
 import plots
+
+import const as cn
 from well_records_texts import texts
+
 
 MIN_OBSERVATIONS_FOR_MK = 10
 FIGURE = 'fig'
 TABLE = 'tab'
 CURRENT_YEAR = int(date.today().strftime("%Y"))
-select_grid_fields = ['Vollständige Laufnummer', 'Art', 'Strasse', 'Hausummer', 'Oberkante Fels-Stratigraphie','Bohrtiefe (m)', 'Long', 'Lat']
+select_grid_fields = ['catnr45', 'art', 'street', 'h_number', 'rock_desc','bohrtiefe_m', 'long', 'lat']
+
+data_source = {'wl-level':'s3://lc-opendata01/100164.gzip', 
+    'rheinpegel': 's3://lc-opendata01/100089.gzip', 
+    'well-records': 's3://lc-opendata01/100182.gzip',
+    'meteo':'s3://lc-opendata01/meteo_blue_temp_prec.gzip'}
 
 class Analysis():
     def __init__(self):
-        self.data = self.get_records()        
-        self.stations_list = list(self.data['Vollständige Laufnummer'])
+        self.data = self.get_well_records()        
+        self.stations_list = list(self.data['catnr45'])
         self.wl_data = self.get_water_level_data()
         self.precip = self.get_precip_data()
         self.rhein_pegel = self.get_rheinpegel_data()
         self.monitoring_stations = list(self.wl_data['stationid'].unique())
-     
-    def get_records(self):
-        df = pd.read_csv("./100182.csv", sep=';')
-        df[['Lat', 'Long']] = df['Geo Point'].str.split(',', expand=True)
-        df['Bohrtiefe (m)'] = df['Z-Koordinate vom Top'] - df['Z-Koordinate von der Basis']
-        df['Vollständige Laufnummer'] = df['Vollständige Laufnummer'].astype('str')
+    
+    @st.cache
+    def get_well_records(self):
+        df = pd.read_parquet(data_source['well-records'])
+        df[['lat', 'long']] = df['geo_point_2d'].str.split(',', expand=True)
+        df['bohrtiefe_m'] = df['pipe_zcoor'] - df['pipe_zcoob']
+        df['catnr45'] = df['catnr45'].astype('str')
         df.fillna('', inplace=True)
         # df[df['Bohrtiefe (m)'].isna()]['Bohrtiefe (m)'] = df['Terrain-Kote'] - df['Sohle-Kote']
        
-        df = df.drop(['Geo Point', 'Geo Shape', 'Kanton', 'Klassifikation', 'Gemeinde bzw. Sektion'], axis=1)
+        df = df.drop(['geo_point_2d', 'geo_shape', 'catnr1', 'catnr3', 'catnr2'], axis=1)
         return df
-    
+
+    @st.cache
     def get_rheinpegel_data(self):
-        filename = './100089.gzip'
-        df = pd.read_parquet(filename)
+        df = pd.read_parquet(data_source['rheinpegel'])
         df = df[['date', 'mean_pegel']]
         df.columns = ['date','pegel']
         df['year'] = df['date'].dt.year
@@ -52,17 +59,17 @@ class Analysis():
         df['first_day_of_week'] = df.date - df.day_of_week * timedelta(days=1)
         return df
 
+    @st.cache
     def get_water_level_data(self):
-        filename = './100164.gzip'
-        df = pd.read_parquet(filename)
+        df = pd.read_parquet(data_source['wl-level'])
         df.columns = ['date','stationid','value']
         df = df[df['value'] < 500]
         df['year'] = df['date'].dt.year
         return df
     
+    @st.cache
     def get_precip_data(self):
-        filename = './meteo_blue_temp_prec.gzip'
-        df = pd.read_parquet(filename)
+        df = pd.read_parquet(data_source['meteo'])
         df = df[['timestamp','precip_sum']]
         df['year'] = df['timestamp'].dt.year
         df['month'] = df['timestamp'].dt.month
@@ -73,11 +80,11 @@ class Analysis():
     
 
     def show_record(self, id):
-        df =  self.data[ self.data['Vollständige Laufnummer'] == id]
-        if df.iloc[0]['chemische Untersuchung (ja/nein)'] == 1:
-            df['Chemische Analysen'] =  f"https://data.bs.ch/explore/embed/dataset/100164/table/?sort=timestamp&refine.stationid={id}"
-        if df.iloc[0]['Grundwasserdaten'] == 1:
-            df['Grundwassermessungen'] =  f"https://data.bs.ch/explore/embed/dataset/100164/table/?sort=timestamp&refine.stationid={id}"
+        df =  self.data[ self.data['catnr45'] == id]
+        if df.iloc[0]['chemische_untersuchung_janein'] == 1:
+            df['chemische_analysen'] =  f"https://data.bs.ch/explore/embed/dataset/100164/table/?sort=timestamp&refine.stationid={id}"
+        if df.iloc[0]['grundwasserdaten'] == 1:
+            df['grundwasser_messungen'] =  f"https://data.bs.ch/explore/embed/dataset/100164/table/?sort=timestamp&refine.stationid={id}"
         df[df.columns] = df[df.columns].astype(str)
         table = df.transpose().to_html(render_links=True, escape=False)
         style = """<style>
@@ -99,29 +106,29 @@ class Analysis():
     
     def get_filtered_stations(self):
         df = self.data
-        with st.sidebar.expander('🔎Filter'):
-            chem_only = st.checkbox('boreholes with chem analysis')
-            water_level_only = st.checkbox('boreholes with waterlevels')
-            options_geology = ['<Select type>'] + list(df['Oberkante Fels-Stratigraphie'].unique())
+        with st.sidebar.expander('🔎 Filter'):
+            chem_only = st.checkbox('Boreholes with chem analysis')
+            water_level_only = st.checkbox('Boreholes with waterlevels')
+            options_geology = ['<Select type>'] + list(df['rock_desc'].unique())
             sel_geology = st.selectbox('Bedrock geology', options = options_geology)
-            options_art = ['<Select type>'] + list(df['Art'].unique())
+            options_art = ['<Select type>'] + list(df['art'].unique())
             sel_type = st.selectbox('Borehole type', options = options_art)
             if chem_only:
-                df =  df[df['chemische Untersuchung (ja/nein)']==1]
+                df =  df[df['chemische_untersuchung_janein']==1]
             if water_level_only:
-                df =  df[df['Vollständige Laufnummer'].isin(self.monitoring_stations)]
+                df =  df[df['catnr45'].isin(self.monitoring_stations)]
             if options_art.index(sel_type)>0:
-                df =  df[df['Art']==sel_type]
+                df =  df[df['art']==sel_type]
             if options_geology.index(sel_geology)>0:
-                df = df[df['Oberkante Fels-Stratigraphie']==sel_geology]
-            depth = st.number_input('borehole depth (m)', min_value=0,max_value=5000)
+                df = df[df['rock_desc']==sel_geology]
+            depth = st.number_input('Borehole depth (m)', min_value=0,max_value=5000)
             if depth > 0:
-                depth_comp = st.radio('depth comparison',['<', '>'])
+                depth_comp = st.radio('Depth comparison',['<', '>'])
                 if depth >0:
                     if depth_comp=='<':
-                        df =  df[df['Bohrtiefe (m)'] < depth]
+                        df =  df[df['bohrtiefe_m'] < depth]
                     else:
-                        df =  df[df['Bohrtiefe (m)'] > depth]
+                        df =  df[df['bohrtiefe_m'] > depth]
             df = df[select_grid_fields]
         return df
     
@@ -166,7 +173,7 @@ class Analysis():
             return result
 
         df = self.data
-        df =  df[df['Vollständige Laufnummer'].isin(self.monitoring_stations)]
+        df =  df[df['catnr45'].isin(self.monitoring_stations)]
         df = df[select_grid_fields]
         settings = {'height':250, 'selection_mode':'single', 'fit_columns_on_grid_load':False}
         st.markdown(f"#### {len(df)} records found")
@@ -176,18 +183,19 @@ class Analysis():
         with st.sidebar.expander("🔎 Filter"):
             start_year, end_year = st.select_slider('Year', options=options_years, value=(options_years[0],options_years[-1]))
         with st.sidebar.expander("⚙️ Settings"):
-            show_precipitation = st.checkbox('Show Precipitation plot', value=True)
-            show_rheinpegel = st.checkbox('Show Rhein water level plot', value=True)
+            show_precipitation = st.checkbox('Show precipitation plot', value=True)
+            show_rheinpegel = st.checkbox('Show Rhine water level plot', value=False)
             show_map = st.checkbox('Show station location on map', value=True)
+            show_record = st.checkbox('Show well record', value=False)
         
         if len(selected)>0:
             selected = selected.iloc[0]
-            station_sel = selected['Vollständige Laufnummer']
+            station_sel = selected['catnr45']
             df = self.wl_data[(self.wl_data['stationid']==station_sel)]
             df = df[(df['year'].isin(range(start_year, end_year+1)))]
             
             if len(df)>0:
-                settings={'title': f"{selected['Strasse']} {selected['Hausummer']} ({station_sel})", 'x':'date', 'y':'value', 'tooltip':['date', 'value'], 
+                settings={'title': f"{selected['street']} {selected['h_number']} ({station_sel})", 'x':'date', 'y':'value', 'tooltip':['date', 'value'], 
                     'width':1000, 'height': 300, 'x_title':'', 'y_title': 'WL elevation (masl)'}
                 min_y = int(df['value'].min())-1
                 max_y = int(df['value'].max())+1
@@ -219,12 +227,15 @@ class Analysis():
 
                 # Map
                 if show_map:
-                    settings={'title': f"Station location:", 'x':'Long', 'y':'Lat', 
-                        'width':200, 'height': 200}
-                    df = pd.DataFrame({'Long':[selected['Long']], 'Lat':[selected['Lat']]})
-                    settings['midpoint'] = (selected['Lat'], selected['Long'] )
-                    st.write(settings['title'])
+                    settings={'title': f"Station location:", 'x':'long', 'y':'lat', 
+                        'width':200, 'height': 200, 'lat':'lat', 'long':'long'}
+                    df = pd.DataFrame({'long':[selected['long']], 'lat':[selected['lat']]})
+                    settings['midpoint'] = (selected['lat'], selected['long'] )
+                    st.markdown(settings['title'])
                     plots.location_map(df, settings)
+                if show_record:
+                    st.markdown('Well record')
+                    self.show_record(station_sel)
             else:
                 st.markdown(f"😞 Sorry, no records found for station {station_sel}")
 
@@ -235,16 +246,14 @@ class Analysis():
         selected = helper.show_table(df, [], settings)
         if len(selected)>0:
             selected = selected.iloc[0]
-            station_sel = selected['Vollständige Laufnummer']
-            
-
+            station_sel = selected['catnr45']
             self.show_record(station_sel)
 
             # show map
-            settings={'title': f"Station location:", 'x':'Long', 'y':'Lat', 
+            settings={'title': f"Station location:", 'long':'long', 'lat':'lat', 
                 'width':200, 'height': 200}
-            df = pd.DataFrame({'Long':[selected['Long']], 'Lat':[selected['Lat']]})
-            settings['midpoint'] = (selected['Lat'], selected['Long'] )
+            df = pd.DataFrame({'long':[selected['long']], 'lat':[selected['lat']]})
+            settings['midpoint'] = (selected['lat'], selected['long'] )
             st.write(settings['title'])
             plots.location_map(df, settings)
             

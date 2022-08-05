@@ -5,7 +5,6 @@ from temperature_texts import texts
 import requests
 import json
 
-
 CURRENT_YEAR = int(date.today().strftime("%Y"))
 MONTHS = [f'"{str(x).zfill(2)}"' for x in range(1,2)]
 
