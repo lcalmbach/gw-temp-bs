@@ -1,14 +1,14 @@
 from http.client import OK
 import streamlit as st
 import pandas as pd
-from os.path import exists
 
 from about import About
 import helper
 import temperature 
 import well_records
+import const as cn
 
-__version__ = '0.0.3'
+__version__ = '0.0.4'
 __author__ = 'Lukas Calmbach'
 __author_email__ = 'lcalmbach@gmail.com'
 VERSION_DATE = '2022-07-25'
@@ -18,7 +18,6 @@ APP_ICON = "💧"
 
 
 MENU_OPTIONS = ['About', 'Temperature Trends', 'Well records']
-DATA_FILE = './temperature_data.pkl'
 LOTTIE_URL = "https://assets5.lottiefiles.com/packages/lf20_ZQqYEY.json"
 LOTTIE_URL = "https://assets1.lottiefiles.com/packages/lf20_fwlx9xtz.json"
 
@@ -29,39 +28,7 @@ APP_INFO = f"""<div style="background-color:powderblue; padding: 10px;border-rad
     """
 
 def get_data():
-    def extract_geopoint(df):
-        df[['latitude', 'longitude']] = df['Geo Point'].str.split(',', expand=True)
-        df.pop('Geo Point')
-        return df
-
-    def create_pickle():
-        ok = False
-        try:
-            df_temp = pd.read_csv('./data/100067_temp.csv', sep=';')
-            fields = ['Probenahmestelle', 'Probenahmedatum_date', 'Geo Point', 'Wert']
-            df_temp = df_temp[fields]
-            df_temp = extract_geopoint(df_temp)
-            df_temp.columns=['station','sampling_date','temperature','latitude','longitude']
-
-            df_depth = pd.read_csv('./data/100067_tiefe.csv', sep=';')
-            fields = ['Probenahmestelle', 'Wert']
-            df_depth = df_depth[fields]
-            df_depth = df_depth.groupby('Probenahmestelle').aggregate(['mean']).reset_index()
-            df_depth.columns = ['station', 'sampling_depth']
-
-            df_joined = pd.merge(df_temp, df_depth, left_on='station', right_on='station') 
-            df_joined=df_joined[['station', 'latitude', 'longitude','sampling_date','sampling_depth', 'temperature']]
-            df_joined['sampling_date']= pd.to_datetime(df_joined['sampling_date'])
-            pd.to_pickle(df_joined, DATA_FILE)
-            ok=True
-        except:
-            ok = False
-        return ok
-
-    if not exists(DATA_FILE):
-        create_pickle()
-    
-    return pd.read_pickle(DATA_FILE)
+    return pd.read_pickle(cn.datasource['temperature'])
 
 def main():
     st.set_page_config(

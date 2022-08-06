@@ -9,6 +9,7 @@ from scipy import stats
 from temperature_texts import texts
 import helper
 import plots
+import const as cn
 
 MIN_OBSERVATIONS_FOR_MK = 10
 FIGURE = 'fig'
@@ -186,7 +187,7 @@ class Analysis():
         return df
 
     def get_surface_temp_data(self):
-        df = pd.read_csv('./surface_temp.csv',sep = '\t')
+        df = pd.read_csv(cn.datasource['surface_temp_year'], sep = '\t')
         df = df[df['year']>1992]
         df.sort_values(by='year')
         return df
