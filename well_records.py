@@ -35,7 +35,7 @@ class Analysis():
         self.rhein_pegel = self.get_rheinpegel_data()
         self.monitoring_stations = list(self.wl_data['stationid'].unique())
     
-    @st.cache
+    #@st.cache
     def get_well_records(self):
         df = pd.read_parquet(data_source['well-records'])
         df[['lat', 'long']] = df['geo_point_2d'].str.split(',', expand=True)
@@ -47,7 +47,7 @@ class Analysis():
         df = df.drop(['geo_point_2d', 'geo_shape', 'catnr1', 'catnr3', 'catnr2'], axis=1)
         return df
 
-    @st.cache
+    #@st.cache
     def get_rheinpegel_data(self):
         df = pd.read_parquet(data_source['rheinpegel'])
         df = df[['date', 'mean_pegel']]
@@ -59,7 +59,7 @@ class Analysis():
         df['first_day_of_week'] = df.date - df.day_of_week * timedelta(days=1)
         return df
 
-    @st.cache
+    #@st.cache
     def get_water_level_data(self):
         df = pd.read_parquet(data_source['wl-level'])
         df.columns = ['date','stationid','value']
@@ -67,7 +67,7 @@ class Analysis():
         df['year'] = df['date'].dt.year
         return df
     
-    @st.cache
+    #@st.cache
     def get_precip_data(self):
         df = pd.read_parquet(data_source['meteo'])
         df = df[['timestamp','precip_sum']]
