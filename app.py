@@ -14,7 +14,7 @@ __author_email__ = 'lcalmbach@gmail.com'
 VERSION_DATE = '2022-07-25'
 GIT_REPO = 'https://github.com/lcalmbach/gw-temp-bs'
 APP_NAME = 'groundwater.bs'
-APP_ICON="💧"
+APP_ICON = "💧"
 
 
 MENU_OPTIONS = ['About', 'Temperature Trends', 'Well records']
