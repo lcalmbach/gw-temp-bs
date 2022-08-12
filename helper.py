@@ -5,6 +5,7 @@ import streamlit as st
 import requests
 from streamlit_lottie import st_lottie
 from st_aggrid import GridOptionsBuilder, AgGrid, DataReturnMode,GridUpdateMode
+import const as cn
 
 FONT_SIZE_SMALL = 0.9
 
@@ -82,3 +83,9 @@ def show_legend(texts:list, legend_type:str, id:int, args:list=[])->int:
     text = texts[legend_type][id-1].format(id, *args)
     st.markdown(font_size_small(text), unsafe_allow_html=True)
     return id + 1
+
+def get_auto_grid_height(df:pd.DataFrame, max_height: int)->int:
+    if (len(df)+1) * cn.GRID_ROW_HEIGHT < max_height:
+        return (len(df)+1) * cn.GRID_ROW_HEIGHT
+    else:
+        return max_height

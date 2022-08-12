@@ -5,8 +5,7 @@ import altair as alt
 import numpy as np
 from datetime import datetime, date, timedelta
 from scipy import stats
-from temperature_texts import texts
-import requests
+from water_levels_texts import texts
 import json
 import helper
 import plots
@@ -58,14 +57,6 @@ class Analysis():
     @st.cache
     def get_water_level_data(self):
         df = pd.read_parquet(cn.datasource['wl-level'])
-        df.columns = ['date','stationid','value']
-        df = df[df['value'] < 500]
-        df['year'] = df['date'].dt.year
-        return df
-    
-    @st.cache
-    def get_water_level_data(self):
-        df = pd.read_parquet(cn.datasource['water-quality'])
         df.columns = ['date','stationid','value']
         df = df[df['value'] < 500]
         df['year'] = df['date'].dt.year
@@ -135,9 +126,6 @@ class Analysis():
                         df =  df[df['bohrtiefe_m'] > depth]
             df = df[select_grid_fields]
         return df
-    
-    def show_water_quality_plot():
-        pass
 
 
     def show_waterlevel_plot(self):
@@ -158,9 +146,9 @@ class Analysis():
         selected = helper.show_table(df, [], settings)
 
         options_years = range(1976, CURRENT_YEAR+1)
-        with st.sidebar.expander("🔎 Filter"):
+        with st.sidebar.expander("🔎 Filter",expanded=True):
             start_year, end_year = st.select_slider('Year', options=options_years, value=(options_years[0],options_years[-1]))
-        with st.sidebar.expander("⚙️ Settings"):
+        with st.sidebar.expander("⚙️ Settings", expanded=True):
             show_precipitation = st.checkbox('Show precipitation plot', value=True)
             show_rheinpegel = st.checkbox('Show Rhine water level plot', value=False)
             show_map = st.checkbox('Show station location on map', value=True)
@@ -217,33 +205,10 @@ class Analysis():
             else:
                 st.markdown(f"😞 Sorry, no records found for station {station_sel}")
 
-    def show_single_record(self):
-        df = self.get_filtered_stations()
-        settings = {'height':250, 'selection_mode':'single', 'fit_columns_on_grid_load': False}
-        st.markdown(f"#### {len(df)} records found")
-        selected = helper.show_table(df, [], settings)
-        if len(selected)>0:
-            selected = selected.iloc[0]
-            station_sel = selected['catnr45']
-            self.show_record(station_sel)
-
-            # show map
-            settings={'title': f"Station location:", 'long':'long', 'lat':'lat', 
-                'width':200, 'height': 200}
-            df = pd.DataFrame({'long':[selected['long']], 'lat':[selected['lat']]})
-            settings['midpoint'] = (selected['lat'], selected['long'] )
-            st.write(settings['title'])
-            plots.location_map(df, settings)
-            
-
     def show_menu(self):
-        menu_options = ['Info', 'Well record']
-        menu_sel = st.sidebar.selectbox('Show',options=menu_options)
+        menu_options = ['Info', 'Water level monitoring']
+        menu_sel = st.sidebar.selectbox('Show', options=menu_options)
         if menu_options.index(menu_sel)==0:
             self.show_info()
         if menu_options.index(menu_sel)==1:
-            self.show_single_record()
-        if menu_options.index(menu_sel)==2:
             self.show_waterlevel_plot()
-        if menu_options.index(menu_sel)==3:
-            self.show_water_quality_plot()

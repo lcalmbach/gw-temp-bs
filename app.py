@@ -6,6 +6,8 @@ from about import About
 import helper
 import temperature 
 import well_records
+import water_levels
+import water_quality
 import const as cn
 
 __version__ = '0.0.4'
@@ -17,7 +19,7 @@ APP_NAME = 'groundwater.bs'
 APP_ICON = "💧"
 
 
-MENU_OPTIONS = ['About', 'Temperature Trends', 'Well records']
+MENU_OPTIONS = ['About', 'Well records', 'Water level monitoring', 'Water quality monitoring', 'Temperature Trends',]
 LOTTIE_URL = "https://assets5.lottiefiles.com/packages/lf20_ZQqYEY.json"
 LOTTIE_URL = "https://assets1.lottiefiles.com/packages/lf20_fwlx9xtz.json"
 
@@ -27,9 +29,6 @@ APP_INFO = f"""<div style="background-color:powderblue; padding: 10px;border-rad
     <a href="{GIT_REPO}">git-repo</a>
     """
 
-def get_data():
-    return pd.read_pickle(cn.datasource['temperature'])
-
 def main():
     st.set_page_config(
         page_title=APP_NAME,
@@ -37,14 +36,18 @@ def main():
         layout="wide")
     st.sidebar.markdown(f"## <center>{APP_NAME}</center>", unsafe_allow_html=True) 
     helper.show_lottie(LOTTIE_URL)
-    data = get_data()
     menu_item = st.sidebar.selectbox('Menu', options=MENU_OPTIONS)
     if menu_item==MENU_OPTIONS[0]:
-        app = About(data)
+        app = About()
     elif menu_item==MENU_OPTIONS[1]:
-        app = temperature.Analysis(data)
-    elif menu_item==MENU_OPTIONS[2]:
         app = well_records.Analysis()
+    elif menu_item==MENU_OPTIONS[2]:
+        app = water_levels.Analysis()
+    elif menu_item==MENU_OPTIONS[3]:
+        app = water_quality.Analysis()
+    elif menu_item==MENU_OPTIONS[4]:
+        app = temperature.Analysis()
+    
     app.show_menu()
     st.sidebar.markdown(APP_INFO, unsafe_allow_html=True)
 

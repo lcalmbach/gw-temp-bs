@@ -5,14 +5,11 @@ import altair as alt
 import numpy as np
 from datetime import datetime, date, timedelta
 from scipy import stats
-from temperature_texts import texts
-import requests
-import json
+from water_quality_texts import texts
 import helper
 import plots
-
 import const as cn
-from well_records_texts import texts
+import gw_data as data
 
 
 MIN_OBSERVATIONS_FOR_MK = 10
@@ -21,67 +18,16 @@ TABLE = 'tab'
 CURRENT_YEAR = int(date.today().strftime("%Y"))
 select_grid_fields = ['catnr45', 'art', 'street', 'h_number', 'rock_desc','bohrtiefe_m', 'long', 'lat']
 
-
 class Analysis():
     def __init__(self):
-        self.data = self.get_well_records()        
-        self.stations_list = list(self.data['catnr45'])
-        self.wl_data = self.get_water_level_data()
-        self.precip = self.get_precip_data()
-        self.rhein_pegel = self.get_rheinpegel_data()
-        self.monitoring_stations = list(self.wl_data['stationid'].unique())
-     
-    @st.cache
-    def get_well_records(self):
-        df = pd.read_parquet(cn.datasource['well-records'])
-        df[['lat', 'long']] = df['geo_point_2d'].str.split(',', expand=True)
-        df['bohrtiefe_m'] = df['pipe_zcoor'] - df['pipe_zcoob']
-        df['catnr45'] = df['catnr45'].astype('str')
-        df.fillna('', inplace=True)
-        # df[df['Bohrtiefe (m)'].isna()]['Bohrtiefe (m)'] = df['Terrain-Kote'] - df['Sohle-Kote']
-       
-        df = df.drop(['geo_point_2d', 'geo_shape', 'catnr1', 'catnr3', 'catnr2'], axis=1)
-        return df
-
-    @st.cache
-    def get_rheinpegel_data(self):
-        df = pd.read_parquet(cn.datasource['rheinpegel'])
-        df = df[['date', 'mean_pegel']]
-        df.columns = ['date','pegel']
-        df['year'] = df['date'].dt.year
-        df['month'] = df['date'].dt.month
-        df['week'] = df['date'].dt.week
-        df['day_of_week'] = df['date'].dt.dayofweek
-        df['first_day_of_week'] = df.date - df.day_of_week * timedelta(days=1)
-        return df
-
-    @st.cache
-    def get_water_level_data(self):
-        df = pd.read_parquet(cn.datasource['wl-level'])
-        df.columns = ['date','stationid','value']
-        df = df[df['value'] < 500]
-        df['year'] = df['date'].dt.year
-        return df
-    
-    @st.cache
-    def get_water_level_data(self):
-        df = pd.read_parquet(cn.datasource['water-quality'])
-        df.columns = ['date','stationid','value']
-        df = df[df['value'] < 500]
-        df['year'] = df['date'].dt.year
-        return df
-    
-    #@st.cache
-    def get_precip_data(self):
-        df = pd.read_parquet(cn.datasource['meteo'])
-        df = df[['timestamp','precip_sum']]
-        df['year'] = df['timestamp'].dt.year
-        df['month'] = df['timestamp'].dt.month
-        df['week'] = df['timestamp'].dt.week
-        df['day_of_week'] = df['timestamp'].dt.dayofweek
-        df['first_day_of_week'] = df.timestamp - df.day_of_week * timedelta(days=1)
-        return df
-    
+        self.wq_data = data.get_water_quality_data()
+        self.samples = self.wq_data[cn.wq_sample_parameter].drop_duplicates()
+        self.wq_parameters = data.get_standard_dataset('water-quality-parameters')
+        self.stations_list = list(self.wq_data['station_id'].unique())
+        self.well_records = data.get_well_records(self.stations_list)
+        current_year = datetime.now().year
+        last_5years = range(current_year-5,current_year+1)
+        self.stations_with_recent_data = list(self.wq_data[self.wq_data['year'].isin(last_5years)]['station_id'].unique())
 
     def show_record(self, id):
         df =  self.data[ self.data['catnr45'] == id]
@@ -104,9 +50,8 @@ class Analysis():
         
 
     def show_info(self):
-        text = texts['info'].format(len(self.data), len(self.monitoring_stations))
+        text = texts['info'].format(len(self.stations_list), len(self.stations_with_recent_data),3000)
         st.markdown(text, unsafe_allow_html=True)
-    
     
     def get_filtered_stations(self):
         df = self.data
@@ -234,16 +179,59 @@ class Analysis():
             settings['midpoint'] = (selected['lat'], selected['long'] )
             st.write(settings['title'])
             plots.location_map(df, settings)
-            
+
+
+    def show_stations(self):
+        def get_filter():
+            f={}
+            with st.sidebar.expander("🔎Filter",expanded=True):
+                f['geology'] = st.selectbox('Geology', options=[])
+            filter = ''
+            return filter
+
+
+        def show_sample_detail(sampleno):
+            st.write('here comes a grid with all measurements')
+        
+
+        def show_samples(station_id):
+            df = self.samples[self.samples['station_id']==int(station_id)]
+            settings['height'] = helper.get_auto_grid_height(df,400)
+            st.markdown(f"**{len(df)} samples**")
+            sel_sample = helper.show_table(df, cols,settings)
+            if len(sel_station)>0:
+                #todo include sample no in 
+                sampleno = sel_station.iloc[0]['sampleno']
+                show_sample_detail(sampleno)
+
+        filter = get_filter()
+        df = self.well_records[cn.station_grid_fields]
+        cols={}
+        
+        settings = {'height':helper.get_auto_grid_height(df,400), 'selection_mode':'single', 'fit_columns_on_grid_load': False}
+        st.markdown(f"**{len(df)} stations found**")
+        sel_station = helper.show_table(df,cols,settings)
+        if len(sel_station)>0:
+            station_id = sel_station.iloc[0]['laufnummer']
+            show_samples(station_id)
+        
+
+    def show_parameters(self):
+        pass
+    
+
+    def show_stats(self):
+        pass
+
 
     def show_menu(self):
-        menu_options = ['Info', 'Well record']
+        menu_options = ['Info', 'Station/Samples', 'Parameters', 'Statistics']
         menu_sel = st.sidebar.selectbox('Show',options=menu_options)
         if menu_options.index(menu_sel)==0:
             self.show_info()
         if menu_options.index(menu_sel)==1:
-            self.show_single_record()
+            self.show_stations()
         if menu_options.index(menu_sel)==2:
-            self.show_waterlevel_plot()
+            self.show_parameters()
         if menu_options.index(menu_sel)==3:
-            self.show_water_quality_plot()
+            self.show_stats()
