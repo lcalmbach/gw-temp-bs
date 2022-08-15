@@ -6,6 +6,7 @@ import requests
 from streamlit_lottie import st_lottie
 from st_aggrid import GridOptionsBuilder, AgGrid, DataReturnMode,GridUpdateMode
 import const as cn
+import base64
 
 FONT_SIZE_SMALL = 0.9
 
@@ -86,6 +87,18 @@ def show_legend(texts:list, legend_type:str, id:int, args:list=[])->int:
 
 def get_auto_grid_height(df:pd.DataFrame, max_height: int)->int:
     if (len(df)+1) * cn.GRID_ROW_HEIGHT < max_height:
-        return (len(df)+1) * cn.GRID_ROW_HEIGHT
+        return 30 + (len(df)+1) * cn.GRID_ROW_HEIGHT
     else:
         return max_height
+
+def get_table_download_link(df: pd.DataFrame, filename:str) -> str:
+    """
+    Generates a link allowing the data in a given panda dataframe to be downloaded
+
+    :param df:  table with data
+    :return:    link string including the data
+    """
+    csv = df.to_csv(index=False)
+    b64 = base64.b64encode(csv.encode()).decode()  # some strings <-> bytes conversions necessary here
+    href = f'<a href="data:file/csv;base64,{b64}" download="{filename}">⬇️Download csv file</a>'
+    return href

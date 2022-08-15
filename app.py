@@ -10,16 +10,16 @@ import water_levels
 import water_quality
 import const as cn
 
-__version__ = '0.0.4'
+__version__ = '0.0.5'
 __author__ = 'Lukas Calmbach'
 __author_email__ = 'lcalmbach@gmail.com'
-VERSION_DATE = '2022-07-25'
+VERSION_DATE = '2022-08-15'
 GIT_REPO = 'https://github.com/lcalmbach/gw-temp-bs'
 APP_NAME = 'groundwater.bs'
 APP_ICON = "💧"
 
 
-MENU_OPTIONS = ['About', 'Well records', 'Water level monitoring', 'Water quality monitoring', 'Temperature Trends',]
+MENU_OPTIONS = ['About', 'Borehole records', 'Water level monitoring', 'Water quality monitoring', 'Temperature Trends',]
 LOTTIE_URL = "https://assets5.lottiefiles.com/packages/lf20_ZQqYEY.json"
 LOTTIE_URL = "https://assets1.lottiefiles.com/packages/lf20_fwlx9xtz.json"
 

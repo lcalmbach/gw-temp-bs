@@ -10,21 +10,24 @@ def plot_map(df: pd.DataFrame, settings: dict, categories: dict={}):
     m = folium.Map(location=settings['midpoint'], zoom_start=ZOOM_START_DETAIL)
     for index, row in df.iterrows():
         tooltip = settings['tooltip_html'].format(
-                row['station']
-                ,row['depth']
+                int(row['stationid'])
                 ,row['temp_mean']
+                ,row['temp_min']
+                ,row['temp_max']
+                ,int(row['year_min'])
+                ,int(row['year_max'])
             )
-        popup = row['station']
+        popup = row['stationid']
         if len(categories)==0:
             folium.Marker(
-                [row['latitude'], row['longitude']], popup=popup, tooltip=tooltip,
+                [row['lat'], row['long']], popup=popup, tooltip=tooltip,
             ).add_to(m)
         else:
             category_field = row[settings['cat_field']]
             _icon=categories[category_field]['icon']
             _color=categories[category_field]['color']
             folium.Marker(
-                [row['latitude'], row['longitude']], popup=popup, tooltip=tooltip,
+                [row['lat'], row['long']], popup=popup, tooltip=tooltip,
                 icon=folium.Icon(color=_color, prefix='fa', icon=_icon),
             ).add_to(m)
     folium_static(m)
@@ -42,11 +45,10 @@ def line_chart(df, settings, regression:bool=True):
     chart = alt.Chart(df).mark_line(width = 2, clip=True).encode(
             x= alt.X(settings['x'], scale=alt.Scale(domain=settings['x_domain'])),
             y= alt.Y(settings['y'], scale=alt.Scale(domain=settings['y_domain'])),
-            #y= alt.Y(settings['y']),
             tooltip=settings['tooltip']    
         )
     if regression:
-        line = chart.transform_regression('year', 'temperature (°C)').mark_line()
+        line = chart.transform_regression(settings['x'], settings['y']).mark_line()
         plot = (chart + line).properties(width=settings['width'], height=settings['height'], title = title)
     else:
         plot = chart.properties(width=settings['width'], height=settings['height'], title = title)
@@ -88,11 +90,29 @@ def time_series_bar(df, settings):
 
 
 def time_series_line(df, settings):
-    chart = alt.Chart(df).mark_line(clip=True).encode(
-        x = alt.X(f"{settings['x']}:T", title=settings['x_title'], scale=alt.Scale(domain=settings['x_domain'])),
-        y = alt.Y(f"{settings['y']}:Q", title=settings['y_title'], scale=alt.Scale(domain=settings['y_domain'])),
-        tooltip=settings['tooltip']
-    )
+    if 'x_domain' in settings:
+        xax = alt.X(f"{settings['x']}:T", title=settings['x_title'], scale=alt.Scale(domain=settings['x_domain']))
+    else:
+        xax = alt.X(f"{settings['x']}:T", title=settings['x_title'])
+    
+    if settings['y_domain'][0] != settings['y_domain'][1]:
+        yax = alt.Y(f"{settings['y']}:Q", title=settings['y_title'], scale=alt.Scale(domain=settings['y_domain']))
+    else:  
+        yax = alt.Y(f"{settings['y']}:Q", title=settings['y_title'])
+
+    if 'color' in settings:
+        chart = alt.Chart(df).mark_line(clip=True).encode(
+            x = xax,
+            y = yax,
+            color = settings['color'],
+            tooltip=settings['tooltip']
+        )
+    else:
+        chart = alt.Chart(df).mark_line(clip=True).encode(
+            x = xax,
+            y = yax,
+            tooltip=settings['tooltip']
+        )
     plot = chart.properties(width=settings['width'], height=settings['height'], title = settings['title'])
     st.altair_chart(plot)
 
@@ -102,13 +122,13 @@ def time_series_chart(df, settings, regression:bool=True):
     #    y= 'y'
     #    )
     title = settings['title'] if 'title' in settings else ''
-    chart = alt.Chart(df).mark_line(width = settings['width'], point=alt.OverlayMarkDef(color='blue')).encode(
-        x= alt.X('sampling_date:T', scale=alt.Scale(domain=settings['x_domain']), title=settings['x_title']),
-        y= alt.Y('temperature:Q', scale=alt.Scale(domain=settings['y_domain']), title=settings['y_title']),
-        tooltip=['sampling_date', 'temperature']    
+    chart = alt.Chart(df).mark_line(point=alt.OverlayMarkDef(color='blue')).encode(
+        x= alt.X(f"{settings['x']}:T"),#, scale=alt.Scale(domain=settings['x_domain']), title=settings['x_title']),
+        y= alt.Y(f"{settings['y']}:Q", scale=alt.Scale(domain=settings['y_domain']), title=settings['y_title']),
+        tooltip=settings['tooltip']
     )
     if regression:
-        line = chart.transform_regression('sampling_date', 'temperature').mark_line()
+        line = chart.transform_regression(settings['x'], settings['y']).mark_line(color='orange')
         plot = (chart + line).properties(width=settings['width'], height=settings['height'], title = title)
     else:
         plot = chart.properties(width=settings['width'], height=settings['height'], title = title)

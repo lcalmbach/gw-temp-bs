@@ -1,10 +1,12 @@
 texts = {
-    "info": """## Well records
-The well records option allows to search and view individidual well records maintained by the Amt für Umweltschutz und Energie of Basel ([more here](https://www.aue.bs.ch/wasser/grundwasser/bohrungen-in-das-grundwasser.html)). This inventory includes {0} records and {1} were or are equipped with water level sensors. 
+    "info": """## Water level monitoring
+The water level shows a list of wells with associated water level monitoring information. By clicking on a well, the corespsonding water level plots will be generated. Optionally additional groundwater related dataset can be shown as discussed below using the `⚙️Settings`. The original dataset has been cleaned for unreasonably high values > 500 masl. 
 
 ### Menu options
-**Well record**: The menu option gives you access to the records for all {0} well records stored in the database. 
+**water level plot**: This menu option allows to display water levels plots for {1} monitoring wells. Each water level plot may be compared to 
+- the timeseries for precipitation ([datasource](https://data.bs.ch/explore/dataset/100051)) 
+- the Rhine-water level ([datasource](https://data.bs.ch/explore/dataset/100089))
 
-**water level plot**: This menu option alows to display water levels plots for {1} monitoring wells. Each water level plot may be compared to the timeseries for precipitation ([datasource](https://data.bs.ch/explore/dataset/100051)) and Rhein-water level ([datasource](https://data.bs.ch/explore/dataset/100089)) for comparison.
+for comparison. In addition the well record information can be displayed and the position of the selected map on a map.
 """
 }
