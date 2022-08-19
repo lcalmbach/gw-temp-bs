@@ -28,6 +28,10 @@ class Analysis():
         self.stations_list = list(self.wq_data['station_id'].unique())
         self.well_records = data.get_well_records(self.stations_list)
         self.geology = list(self.well_records['geology'].unique())
+        self.guideline = pd.read_csv(f"./data/guideline_ch_single_obs.csv",sep=';')
+        gl = self.guideline[['parameter','value','unit']]
+        gl.columns = ['parameter','gl_value','gl_unit']
+        self.wq_parameters = self.wq_parameters.merge(gl, on='parameter', how='left')
         current_year = datetime.now().year
         last_5years = range(current_year-5,current_year+1)
         self.stations_with_recent_data = list(self.wq_data[self.wq_data['year'].isin(last_5years)]['station_id'].unique())
@@ -54,7 +58,7 @@ class Analysis():
         
 
     def show_info(self):
-        text = texts['info'].format(len(self.stations_list), len(self.stations_with_recent_data),3000)
+        text = texts['info'].format(len(self.stations_list), len(self.stations_with_recent_data),len(self.para))
         st.markdown(text, unsafe_allow_html=True)
     
 
@@ -64,15 +68,18 @@ class Analysis():
             with st.sidebar.expander("⚙️Settings",expanded=True):
                 self.settings['show_time_series']=st.checkbox("Show time series plot", help='Plots show only, if at least one station is selected in the filter section')
                 yax_auto = st.checkbox("Y-Axis  auto scale",value=True)
-
                 if not yax_auto:
                     ymin = st.number_input("y-axis min", min_value = -999999.000, max_value= 9999999.000, value = 0.000)
                     ymax = st.number_input("y-axis max", min_value = -999999.000, max_value= 9999999.000, value = 0.000)
                 else:
                     ymin, ymax = 0,0
+                if self.settings['show_time_series']:
+                    self.settings['show_guideline'] = st.checkbox('Show guideline value as h-line')
+
                 self.settings['y_domain'] = [ymin, ymax]
 
         def filter_parameters(df):
+            filter = {}
             with st.sidebar.expander("🔎Filter",expanded=True):
                 options_general_groups = ['<select general group>'] + self.wq_parameter_general_groups
                 sel_general_group = st.selectbox('General parameter group', options=options_general_groups)
@@ -94,41 +101,51 @@ class Analysis():
                 if sel_parameters:
                     df = df[df['parameter'].isin(sel_parameters)]
                 
+                filter['exceedances_only'] = st.checkbox('Show exceeding values only')
                 options = ['<select stations>'] + self.stations_list
-                sel_stations = st.multiselect('Station', options=options)
+                filter['sel_stations'] = st.multiselect('Station', options=options)
+                filter['years']=st.slider('Years',1993, 2022, (1993,2022))
+            return df, filter
 
-            return df, sel_stations
 
-
-        def show_values_grid(parameter: str, sel_stations):
+        def show_values_grid(sel_parameter: dict, filter):
+            parameter = sel_parameter.iloc[0]['parameter']
             df = self.wq_data[self.wq_data['parameter']==parameter]
-            if sel_stations: 
-                df = df[df['station_id'].isin(sel_stations)]
+            if filter['sel_stations']: 
+                df = df[df['station_id'].isin(filter['sel_stations'])]
+
+            df = df.merge(self.wq_parameters,how='left')
             df = df[cn.wq_parameter_value_grid_fields]
             df = df.sort_values(by = ['station_id', 'date'])
+            df[['value_num', 'gl_value']] = df[['value_num', 'gl_value']].astype(float)
+            if filter['exceedances_only']:
+                df = df[df['value_num'] > df['gl_value']]
+            if filter['years'] != (1993,2022):
+                df = df[df['date'].dt.year.isin(filter['years'])]
             settings = get_settings()
             st.markdown(f'**{len(df)} observations for selected parameter {parameter}**')
             settings = {'height':helper.get_auto_grid_height(df,400), 'selection_mode':'single', 'fit_columns_on_grid_load': False}
             helper.show_table(df,cols,settings)
             filename = f"{parameter}.csv"
             st.markdown(helper.get_table_download_link(df, filename), unsafe_allow_html=True)
-            if self.settings['show_time_series'] and sel_stations:
+            if self.settings['show_time_series'] and filter['sel_stations']:
                 cfg = {'x': 'date', 'y': 'value_num', 'color': 'station_id:N', 'tooltip':['station_id', 'date','value'], 
-                    'x_title': '', 'y_title':parameter, 'width':1000, 'height':400, 'title': parameter}
+                    'x_title': '', 'y_title':parameter, 'width':1000, 'height':400, 'title': parameter, 'symbol_size':40}
                 if 'y_domain' in self.settings:
                     cfg['y_domain'] = self.settings['y_domain']
+                if self.settings['show_guideline']:
+                    cfg['h_line'] = 'gl_value'
                 plots.time_series_line(df, cfg) 
 
 
         df = self.wq_parameters
-        df, sel_stations = filter_parameters(df)
+        df, filter = filter_parameters(df)
         cols={}
         settings = {'height':helper.get_auto_grid_height(df,400), 'selection_mode':'single', 'fit_columns_on_grid_load': False}
         st.markdown(f"**{len(df)} parameters found**")
         sel_parameter = helper.show_table(df,cols,settings)
         if len(sel_parameter)>0:
-            parameter = sel_parameter.iloc[0]['parameter']
-            show_values_grid(parameter, sel_stations)
+            show_values_grid(sel_parameter, filter)
         
     def show_stations(self):
         def filter_stations(df):
@@ -178,11 +195,11 @@ class Analysis():
     
 
     def show_stats(self):
-        pass
+        st.write('here come the statisitstics')
 
 
     def show_menu(self):
-        menu_options = ['Info', 'Station/Samples', 'Parameters']
+        menu_options = ['Info', 'Station/Samples', 'Parameters'] # , 'Statistics'
         menu_sel = st.sidebar.selectbox('Show',options=menu_options)
         if menu_options.index(menu_sel)==0:
             self.show_info()

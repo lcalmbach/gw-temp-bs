@@ -113,7 +113,30 @@ def time_series_line(df, settings):
             y = yax,
             tooltip=settings['tooltip']
         )
-    plot = chart.properties(width=settings['width'], height=settings['height'], title = settings['title'])
+    
+    if 'h_line' in settings:
+        chart += alt.Chart(df).mark_line(clip=True, color='red').encode(
+        x = xax,
+        y = settings['h_line'],
+        tooltip = settings['h_line'])
+    
+    if 'symbol_size' in settings:
+        if not('symbol_opacity' in settings):
+            settings['symbol_opacity'] = 0.6
+        if 'color' in settings:
+            chart += alt.Chart(df).mark_circle(size=settings['symbol_size'], clip=True, opacity=settings['symbol_opacity']).encode(
+                x = xax,
+                y = yax,
+                color = settings['color'],
+                tooltip = settings['tooltip']
+            )
+        else:
+            chart += alt.Chart(df).mark_circle(size=settings['symbol_size'], opacity=settings['symbol_opacity']).encode(
+                x = xax,
+                y = yax,
+                tooltip = settings['tooltip']
+            )
+    plot = chart.properties(width=settings['width'], height=settings['height'], title=settings['title'])
     st.altair_chart(plot)
 
 def time_series_chart(df, settings, regression:bool=True):

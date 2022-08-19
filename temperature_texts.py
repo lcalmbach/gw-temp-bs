@@ -1,9 +1,9 @@
 texts = {
 'intro': """## Groundwater temperature trend since 1993 in Basel (Switzerland)
 
-Temperature is considered to be an important quality indicator for ground and surface water. A higher water temperature limits the solubility of oxygen and various minerals. Higher temperatures in groundwater also stimulate microbial activity. The observation in ground water temperature may contribute important information to better understand climate change process. To date, an overall increase in groundwater temperature can be observed across Switzerland ([bafu.admin.ch](https://www.bafu.admin.ch/bafu/en/home/topics/water/info-specialists/state-of-waterbodies/state-of-groundwater/groundwater-temperature.html)). This study attempts to characterize the temperature state and past trend in the groundwater of the canton of Basel-Stadt (northern Switzerland) and attempts to answer the following questions:
+Temperature is considered to be an important quality indicator for ground and surface water. A higher water temperature limits the solubility of oxygen and various minerals. Higher temperatures in groundwater also stimulate microbial activity. The observation in ground water temperature may contribute important information to better understand climate change process. To date, an overall increase in groundwater temperature can be observed across Switzerland ([bafu.admin.ch](https://www.bafu.admin.ch/bafu/en/home/topics/water/info-specialists/state-of-waterbodies/state-of-groundwater/groundwater-temperature.html)). This study attempts to characterize the temperature state and past trend in the groundwater of the canton of Basel-Stadt (northern Switzerland) and to answer the following questions:
 - Is the groundwater temperature generally increasing?
-- Is there a link between groundwater depth and the extent of temperature increase? 
+- How does groundwater temperature compare to ambient surface temperature
 - What groundwater temperatures can be expected in ten years?
 
 ### Location of Stations
@@ -25,7 +25,7 @@ The Mann-Kendall test is a statistical hypothesis test, where the h0-hypothesis 
     ],
 
 "fig": [
-        "Figure {}: Location of stations with available groundwater temperature observations. Use the cursor to discover the depth and mean temperature for these locations.",
+        "Figure {}: Location of stations with available groundwater temperature observations. Min, max und average values are calculated based on monthly averaged values. Use the cursor to discover the depth and mean temperature for these locations.",
         "Figure {}: Spatial distribution of positive, negative, and neutral groundwater temperature trends.",
         "Figure {}: Surface temperature in the study area.",
         "Figure {}: Comparison of yearly average for surface temperature and groundwater temperature.",
@@ -41,7 +41,7 @@ Figure 2 shows the spatial distribution of the different trend test results: *in
 """,
 
 'surface_temperature': """### Comparison to Surface Temperature
-Groundwater infiltrates from the surface. In the absence of cooling or heating effects in the subsurface, groundwater temperature should closely reflect the temperature on the surface during infiltration, particularly in shallow systems. Figure 3 shows the yearly average of surface temperature at the Meteorologische Station Basel-Binningen (data source: [Meteoblue](https://www.meteoblue.com/de/historyplus)). In the time interval starting 1986, the regression line constructed through these points does not show a significant increasing trend. The temperature curve seems to follow an increasing trend, which is confirmed by the Mann-Kendall test result (p=0.05) and the regression line. The temperature regression results in a yearly temperature increase of {:.2f}°C/year.
+Groundwater infiltrates from the surface. In the absence of cooling or heating effects in the subsurface, groundwater temperature should closely reflect the temperature on the surface during infiltration, particularly in shallow systems. Figure 3 shows the yearly average of surface temperature at the Meteorologische Station Basel-Binningen (data source: [Meteoblue](https://www.meteoblue.com/de/historyplus)). The temperature curve seems to follow an increasing trend, which is confirmed by the Mann-Kendall test result (p=0.05) and the regression line. The temperature regression results in a yearly temperature increase of {:.2f}°C/year.
 """,
 'surface_temperature_compare_to_groundwater':"""Figure 4 compares annual average temperatures of ground and surface water in a scatter plot. This representation shows, that groundwater temperatures are approximately 4 degrees warmer than the surface temperature. Each marker represents a year and the marker fillcolor ranging from blue = early years to red = later years allow appreciate a trend from lower left to upper right. The correlation between the two parameters is rather low. Such a correlation may only be expected on a broad timescale and with a considerable time lag, since warmer oder cooler surface water requires a considerable time span to reach the water table. In addition, the groundwater temperature may be influenced by antropogenic activities such as heat extraction by heatpumps or heated underground constructions.""",
 
@@ -59,8 +59,8 @@ A linear regression was conducted on all stations having a minimum number of {} 
 This study has found that nearly half of all stations in the groundwater monitoring network of Basel show an increasing temperature trend. Temperature increase per year varies between {:.2f} and {:.2f} °C/year, based on the linear regression calculation. This is considerably higher than the observed surface temperature increase during the same period of {:.2f}°C/year. While the increasing surface temperature may partly explain the increasing temperature trend in groundwater, this fact does not explain why the process should be stronger in the subsurface than on the surface. The difference may be explained by a gradual change in recharge dynamics. In such a scenario, groundwater recharge would gradually shift to the warmer season. In an area of intensive urban residential and industrial land use, artificial processes represent additional suspects for impacting the groundwater temperature. Underground constructions and heat exchange pumps used for heating or cooling are potential candidates for such processes. However, all mentioned processes are mere candidates to explain the observed temperature trend phenomenon. Additional data and research is required to confirm these hypotheses.
 """,
 
-'mk-menu':"""This menu item allows to conduct and inspect Mann-Kendall tests on all or individual wells. The table below provides more detail on the temperature stastistics as well as on the Mann-Kendall test results.
+'mk-menu':"""This menu item allows to conduct and inspect the [Mann-Kendall test](https://wikitia.com/wiki/Mann-Kendall_trend_test) on all or a selection of wells. The table below provides more detail on the temperature stastistics as well as on the test results. The line on the plots represents the [Theil–Sen estimator](https://en.wikipedia.org/wiki/Theil%E2%80%93Sen_estimator).
 
-Select your stations and define the minimum number of points required to conduct the test, then press the Rn MK-test on the sidebar.
+Select your stations and define the minimum number of points required to conduct the test, then press the `Run MK-test` button.
 """
 }

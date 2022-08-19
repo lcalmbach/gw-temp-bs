@@ -19,10 +19,8 @@ TABLE = 'tab'
 class Analysis():
     def __init__(self):
         self.data = gw_data.get_standard_dataset('gw-temperature')
-        self.data = self.data[['date','stationid','refpoint','topterrain','avg_temp']]
-        self.data.columns=['date','stationid','refpoint','topterrain','temperature']
-        self.data['year'] = self.data['date'].dt.year
-        self.data['month'] = self.data['date'].dt.month
+        self.data = self.data[['stationid','year','month','avg_temp']]
+        self.data.columns=['stationid','year','month','temperature']
         self.data['day'] = 15
         self.data['month_date'] = pd.to_datetime(self.data[['year','month','day']])
         self.stations = list(self.data['stationid'].unique())
@@ -85,7 +83,7 @@ class Analysis():
         settings = {'x':'month_date', 'y': 'temperature', 'x_title':'','y_title':'mean temperature °C', 'tooltip':['stationid','month_date', 
             'temperature'], 'width':1000, 'height':400}
         
-        if st.sidebar.button("Run MK-test"):
+        if st.button("Run MK-test"):
             if len(stations)== 0:
                 stations = self.stations
             #df_result = pd.DataFrame(columns=['trend','h','p','z','Tau','s','var_s','slope','intercept'])
@@ -163,10 +161,10 @@ class Analysis():
         result = {}
         future_date = date(date.today().year + 10, date.today().month, date.today().day)
         for station in stations:
-            df = self.data[self.data['stationid']==station].sort_values(by='date')
-            min_date = df['date'].min()
+            df = self.data[self.data['stationid']==station].sort_values(by='month_date')
+            min_date = df['month_date'].min()
             min_date = date(min_date.year, min_date.month, min_date.day)
-            x = list( (df['date'] - df['date'].min())  / np.timedelta64(1,'D'))
+            x = list( (df['month_date'] - df['month_date'].min())  / np.timedelta64(1,'D'))
             y = list(df['temperature'])
             linreg = stats.linregress(x, y)
             days_to_future_date = (future_date - min_date).days
