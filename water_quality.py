@@ -58,7 +58,7 @@ class Analysis():
         
 
     def show_info(self):
-        text = texts['info'].format(len(self.stations_list), len(self.stations_with_recent_data),len(self.para))
+        text = texts['info'].format(len(self.stations_list), len(self.stations_with_recent_data),len(self.wq_parameters))
         st.markdown(text, unsafe_allow_html=True)
     
 
