@@ -1,10 +1,61 @@
+from wsgiref.util import setup_testing_defaults
 import folium
 from streamlit_folium import folium_static
 import pandas as pd
 import altair as alt
 import streamlit as st
+import helper
+import const as cn
 
 ZOOM_START_DETAIL = 13
+
+def plot_colormap (df: pd.DataFrame, settings: dict):
+    def plot_legend(digits:int):
+
+        text =f"""Legend | &nbsp; 
+------ | ------
+🟢   | {min.round(3)} - {((max-min) * 0.25).round(digits)} 
+🟡   | >{((max-min) * 0.25).round(digits)} - {((max-min) * 0.5).round(digits)}
+🟠   | >{((max-min) * 0.5).round(digits)} - {((max-min) * 0.75).round(digits)}
+🔴   | >{((max-min) * 0.75).round(digits)}"""
+        st.markdown(text, unsafe_allow_html=True)
+    
+    
+    def get_defaults(settings):
+        if 'size' not in settings: settings['size'] = 8
+        if 'tooltip_html' not in settings:
+            settings['tooltip_html'] = """
+            <b>Station:</b> {}<br/>           
+            <b>Value:</b> {}<br/>"""
+        return settings
+    
+    df.dropna( subset=["lat", "long", 'value_num'], inplace=True)
+    df[[settings['lat'], settings['long']]] =df[[settings['lat'], settings['long']]] .astype(float)
+
+    settings = get_defaults(settings)
+    midpoint = list(df[['lat','long']].mean())
+    stats = df[settings['value_col']].agg(['mean','std', 'min', 'max'])
+    min=stats[0]-stats[1]*2 if stats[0]-stats[1]*2 > stats[2] else stats[2]
+    max=stats[0]+stats[1]*2 if stats[0]+stats[1]*2 < stats[3]  else stats[3]
+    digits = helper.get_digits(list(df[settings['value_col']]))
+    df[settings['value_col']]=df[settings['value_col']].round(digits)
+    m = folium.Map(location=midpoint, width="%100", height="%100", zoom_start=ZOOM_START_DETAIL)
+    colormap = folium.StepColormap(colors=['green','yellow','orange','red'] ,
+                            index=[min,(max-min) * 0.25,(max-min) * 0.5,(max-min) * 0.75,max], 
+                            vmin=min,
+                            vmax=max)
+    
+    for index, row in df.iterrows():
+        tooltip = settings['tooltip_html'].format(row[settings['station_id']], row[settings['value_col']])
+        folium.Circle(
+            location=(row[settings['lat']], row[settings['long']]),
+            radius=settings['size'],
+            fill=True, 
+            color=colormap(row[settings['value_col']]),
+            tooltip=tooltip
+    ).add_to(m)
+    folium_static(m)
+    plot_legend(digits)
 
 def plot_map(df: pd.DataFrame, settings: dict, categories: dict={}):
     m = folium.Map(location=settings['midpoint'], zoom_start=ZOOM_START_DETAIL)
@@ -164,4 +215,12 @@ def heatmap(df, settings):
         color=settings['color'],
         tooltip=settings['tooltip']
     ).properties(title = settings['title'])
+    st.altair_chart(plot)
+
+def bar_chart(df:pd.DataFrame, settings:dict):
+    bar_width = settings['width'] / len(df) * .75
+    plot = alt.Chart(df).mark_bar(size=bar_width).encode(
+        x=f"{settings['x']}:N",
+        y=settings['y'],
+    ).properties(title = settings['title'],width=settings['width'], height=settings['height'])
     st.altair_chart(plot)

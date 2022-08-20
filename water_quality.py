@@ -27,6 +27,7 @@ class Analysis():
         self.wq_parameter_groups = list(self.wq_parameters['gruppe'].unique())
         self.stations_list = list(self.wq_data['station_id'].unique())
         self.well_records = data.get_well_records(self.stations_list)
+        self.well_records['laufnummer']=self.well_records['laufnummer'].astype(int)
         self.geology = list(self.well_records['geology'].unique())
         self.guideline = pd.read_csv(f"./data/guideline_ch_single_obs.csv",sep=';')
         gl = self.guideline[['parameter','value','unit']]
@@ -61,51 +62,53 @@ class Analysis():
         text = texts['info'].format(len(self.stations_list), len(self.stations_with_recent_data),len(self.wq_parameters))
         st.markdown(text, unsafe_allow_html=True)
     
+    def filter_parameters(self,df):
+        filter = {}
+        with st.sidebar.expander("🔎Filter",expanded=True):
+            options_general_groups = ['<select general group>'] + self.wq_parameter_general_groups
+            sel_general_group = st.selectbox('General parameter group', options=options_general_groups)
+            if options_general_groups.index(sel_general_group)>0:
+                df = df[df['allgemeine_parametergruppe']==sel_general_group]
+            
+            options_groups = ['<select group>'] + self.wq_parameter_groups
+            sel_group = st.selectbox('Parameter group', options=options_groups)
+            if options_groups.index(sel_group)>0:
+                df = df[df['gruppe']==sel_group]
+            
+            if options_groups.index(sel_group)>0:
+                options = list(self.wq_parameters[self.wq_parameters['gruppe']==sel_group ]['parameter'])
+            elif options_general_groups.index(sel_general_group)>0:
+                options = list(self.wq_parameters[self.wq_parameters['allgemeine_parametergruppe']==sel_general_group ]['parameter'])
+            else:
+                options = list(self.wq_parameters['parameter'])
+            sel_parameters = st.multiselect('Parameter', options=options)
+            if sel_parameters:
+                df = df[df['parameter'].isin(sel_parameters)]
+            filter['sel_parameters']=sel_parameters
+            filter['exceedances_only'] = st.checkbox('Show exceeding values only')
+            options = ['<select stations>'] + self.stations_list
+            filter['sel_stations'] = st.multiselect('Station', options=options)
+            filter['years'] = st.slider('Years', 1993, 2022, (1993,2022))
+        return df, filter
 
     def show_parameters(self):
         def get_settings():
             settings = {}
+            ymin, ymax = 0,0
             with st.sidebar.expander("⚙️Settings",expanded=True):
                 self.settings['show_time_series']=st.checkbox("Show time series plot", help='Plots show only, if at least one station is selected in the filter section')
-                yax_auto = st.checkbox("Y-Axis  auto scale",value=True)
-                if not yax_auto:
-                    ymin = st.number_input("y-axis min", min_value = -999999.000, max_value= 9999999.000, value = 0.000)
-                    ymax = st.number_input("y-axis max", min_value = -999999.000, max_value= 9999999.000, value = 0.000)
-                else:
-                    ymin, ymax = 0,0
                 if self.settings['show_time_series']:
+                    yax_auto = st.checkbox("Y-Axis  auto scale",value=True)
+                    if not yax_auto:
+                        ymin = st.number_input("y-axis min", min_value = -999999.000, max_value= 9999999.000, value = 0.000)
+                        ymax = st.number_input("y-axis max", min_value = -999999.000, max_value= 9999999.000, value = 0.000)
+                        
                     self.settings['show_guideline'] = st.checkbox('Show guideline value as h-line')
-
+                self.settings['show_map']=st.checkbox("Show map", help='Maps required data to be aggregated if multiple sample over time are available from the same station')
+                if self.settings['show_map']:
+                    options = ['mean','min','max','std']
+                    self.settings['map_aggregation'] = st.selectbox("Aggregation for station values",options=options)
                 self.settings['y_domain'] = [ymin, ymax]
-
-        def filter_parameters(df):
-            filter = {}
-            with st.sidebar.expander("🔎Filter",expanded=True):
-                options_general_groups = ['<select general group>'] + self.wq_parameter_general_groups
-                sel_general_group = st.selectbox('General parameter group', options=options_general_groups)
-                if options_general_groups.index(sel_general_group)>0:
-                    df = df[df['allgemeine_parametergruppe']==sel_general_group]
-                
-                options_groups = ['<select group>'] + self.wq_parameter_groups
-                sel_group = st.selectbox('Parameter group', options=options_groups)
-                if options_groups.index(sel_group)>0:
-                    df = df[df['gruppe']==sel_group]
-                
-                if options_groups.index(sel_group)>0:
-                    options = list(self.wq_parameters[self.wq_parameters['gruppe']==sel_group ]['parameter'])
-                elif options_general_groups.index(sel_general_group)>0:
-                    options = list(self.wq_parameters[self.wq_parameters['allgemeine_parametergruppe']==sel_general_group ]['parameter'])
-                else:
-                    options = list(self.wq_parameters['parameter'])
-                sel_parameters = st.multiselect('Parameter', options=options)
-                if sel_parameters:
-                    df = df[df['parameter'].isin(sel_parameters)]
-                
-                filter['exceedances_only'] = st.checkbox('Show exceeding values only')
-                options = ['<select stations>'] + self.stations_list
-                filter['sel_stations'] = st.multiselect('Station', options=options)
-                filter['years']=st.slider('Years',1993, 2022, (1993,2022))
-            return df, filter
 
 
         def show_values_grid(sel_parameter: dict, filter):
@@ -136,10 +139,16 @@ class Analysis():
                 if self.settings['show_guideline']:
                     cfg['h_line'] = 'gl_value'
                 plots.time_series_line(df, cfg) 
+            if self.settings['show_map']:
+                df = df[['station_id','value_num']].groupby(['station_id']).agg(self.settings['map_aggregation']).reset_index()
+                df = pd.merge(df, self.well_records, how='left', left_on=['station_id'], right_on=['laufnummer'])
+                settings = {'lat':'lat','long':'long','value_col':'value_num', 'min_val':0,'max_val':10,'station_id':'station_id',
+                    'size':50, 'tooltip_html' : f"""<b>Station:</b> {{}}<br/><b>{parameter}:</b> {{}}<br/>"""}
+                plots.plot_colormap(df, settings)
 
 
         df = self.wq_parameters
-        df, filter = filter_parameters(df)
+        df, filter = self.filter_parameters(df)
         cols={}
         settings = {'height':helper.get_auto_grid_height(df,400), 'selection_mode':'single', 'fit_columns_on_grid_load': False}
         st.markdown(f"**{len(df)} parameters found**")
@@ -195,11 +204,57 @@ class Analysis():
     
 
     def show_stats(self):
-        st.write('here come the statisitstics')
+        options_groupplots = ['No plot groups','station','parameter']
+        options_agg_functions = ['min','max','mean','std']
+        title_dict={
+            'min': "minimum values",
+            'max': "maximum values",
+            'mean': "average values",
+            'std': "standard deviation"}
+        options_temporal_agg=['year','month','month_date']
+        def get_settings():
+            with st.sidebar.expander("⚙️Settings",expanded=True):
+                self.settings['temporal_aggregation']=st.selectbox('Temporal aggregation', options=options_temporal_agg)
+                self.settings['aggregation_func']=st.selectbox('Aggregation function', options=options_agg_functions)                
+                self.settings['group_plot'] = st.selectbox('Group plots by', options=options_groupplots)
+        
+        
+        df = self.wq_data.merge(self.wq_parameters[cn.wq_parameters_value_grid_fields], on='parameter', how='left')
+        df, filter = self.filter_parameters(df)
+        get_settings()
+        if options_groupplots.index(self.settings['group_plot'])==0:
+            parameter=filter['sel_parameters'][0]
+            df = df[df['parameter']==parameter]
+            df_plot = df[[self.settings['temporal_aggregation'],'value_num']].groupby([self.settings['temporal_aggregation']]).agg([self.settings['aggregation_func']]).reset_index()
+            df_plot.columns = [self.settings['temporal_aggregation'], parameter]
+            settings = {'x':self.settings['temporal_aggregation'], 'y':parameter,'title':parameter, 'width':800,'height':400}
+            plots.bar_chart(df_plot, settings)
+        elif options_groupplots.index(self.settings['group_plot'])==1:
+            if (len(filter['sel_stations']) == 0) or (len(filter['sel_stations']) > 50):
+                st.warning('Pleas select less than 50 stations')
+            else:
+                parameter=filter['sel_parameters'][0]
+                df = df[df['parameter']==parameter]
+                for station in filter['sel_stations']:
+                    df_plot = df[df['station_id']==station]
+                    df_plot = df_plot[[self.settings['temporal_aggregation'],'value_num']].groupby([self.settings['temporal_aggregation']]).agg([self.settings['aggregation_func']]).reset_index()
+                    df_plot.columns = [self.settings['temporal_aggregation'], parameter]
+                    settings = {'x':self.settings['temporal_aggregation'], 'y':parameter,'title':f"Station:{station}, {title_dict[self.settings['aggregation_func']]}", 'width':800,'height':400}
+                    plots.bar_chart(df_plot, settings)
+        elif options_groupplots.index(self.settings['group_plot'])==2:
+            if (len(filter['sel_parameters']) == 0) or (len(filter['sel_parameters']) > 50):
+                st.warning('Pleas select less than 50 parameters')
+            else:
+                for parameter in filter['sel_parameters']:
+                    df_plot = df[df['parameter']==parameter]
+                    df_plot = df_plot[[self.settings['temporal_aggregation'],'value_num']].groupby([self.settings['temporal_aggregation']]).agg([self.settings['aggregation_func']]).reset_index()
+                    df_plot.columns = [self.settings['temporal_aggregation'], parameter]
+                    settings = {'x':self.settings['temporal_aggregation'], 'y':parameter,'title':parameter, 'width':800,'height':400}
+                    plots.bar_chart(df_plot, settings)
 
 
     def show_menu(self):
-        menu_options = ['Info', 'Station/Samples', 'Parameters'] # , 'Statistics'
+        menu_options = ['Info', 'Station/Samples', 'Parameters'] #, 'Statistics'
         menu_sel = st.sidebar.selectbox('Show',options=menu_options)
         if menu_options.index(menu_sel)==0:
             self.show_info()

@@ -7,6 +7,7 @@ from streamlit_lottie import st_lottie
 from st_aggrid import GridOptionsBuilder, AgGrid, DataReturnMode,GridUpdateMode
 import const as cn
 import base64
+import numpy as np
 
 FONT_SIZE_SMALL = 0.9
 
@@ -102,3 +103,16 @@ def get_table_download_link(df: pd.DataFrame, filename:str) -> str:
     b64 = base64.b64encode(csv.encode()).decode()  # some strings <-> bytes conversions necessary here
     href = f'<a href="data:file/csv;base64,{b64}" download="{filename}">⬇️Download csv file</a>'
     return href
+
+def get_digits(values:list):
+    values.sort()
+    min,max= values[0], values[-1]
+    m = int(np.log10(min))
+    if m<0:m-=1
+    if m < 0:
+        return abs(m)
+    elif m < 100:
+        return 1
+    else:
+        return 0 
+    
