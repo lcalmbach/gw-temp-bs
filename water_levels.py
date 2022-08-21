@@ -27,6 +27,7 @@ class Analysis():
         self.well_records = gw_data.get_well_records(self.monitoring_stations)
         self.precip = self.get_precip_data()
         self.rhein_pegel = self.get_rheinpegel_data()
+        self.settings = {}
 
 
     @st.cache
@@ -199,10 +200,64 @@ class Analysis():
             else:
                 st.markdown(f"😞 Sorry, no records found for station {station_sel}")
 
+
+    def show_stats(self):
+        def get_settings():
+            with st.sidebar.expander("⚙️Settings",expanded=True):
+                self.settings['show_table']=st.checkbox('Show stat. results table', value=True)
+                self.settings['show_linechart']=st.checkbox('Show linechart', value=True)
+                self.settings['temporal_aggregation'] = 'year'
+                self.settings['aggregation_func'] = 'mean'
+                self.settings['group_plot'] = st.selectbox('Group plots by', options=options_groupplots)
+
+        def show_linechart(df):
+            plot_cfg = {'x':self.settings['temporal_aggregation'], 'y':'mean_wl','title':f'Mean waterlevel for station {station}', 'width':800,'height':400, 'y_title':'mean waterlevel (masl)'}
+            plot_cfg['max_x_distance'] = 1
+            plot_cfg['x_dt']='O'
+            df['ci_95']= df['mean_wl'] + 1.65 * df['std_wl']
+            df['ci_05']= df['mean_wl'] - 1.65 * df['std_wl']
+            plot_cfg['x_domain'] = (df[self.settings['temporal_aggregation']].min(), df[self.settings['temporal_aggregation']].max())
+            plot_cfg['y_domain'] = (df['ci_05'].min()-0.4, df['ci_95'].max()+0.4)
+            plot_cfg['tooltip']= [self.settings['temporal_aggregation'],'mean_wl' ]
+            if self.settings['show_linechart']:
+                plots.confidence_band(df, plot_cfg)
+                st.write(f"Yearly average for waterlevels of station {station}, shaded area show the 90% confidence interval")
+
+        options = ['<select stations>'] + self.monitoring_stations
+        sel_stations = st.sidebar.multiselect('Station', options=options,help='If no station is selected, all stations will be analysed')
+        if not sel_stations:
+            sel_stations = list(self.monitoring_stations)
+        options_groupplots = ['No plot groups','station']
+        options_agg_functions = ['min','max','mean','std','count']
+        title_dict={
+            'min': "minimum values",
+            'max': "maximum values",
+            'mean': "average values",
+            'std': "standard deviation"}
+        
+        df = self.wl_data[self.wl_data['stationid'].isin(sel_stations)]
+
+        get_settings()
+
+        df = df[[self.settings['temporal_aggregation'],'stationid','value']].groupby(['stationid',self.settings['temporal_aggregation']]).agg(options_agg_functions).reset_index()
+        df.columns=['stationid', 'year', 'min_wl', 'max_wl', 'mean_wl', 'std_wl', 'count']
+        df[['min_wl', 'max_wl', 'mean_wl', 'std_wl']] = df[['min_wl', 'max_wl', 'mean_wl', 'std_wl']].round(2)
+        table_cfg = {'height':250, 'selection_mode':'single', 'fit_columns_on_grid_load':False}
+        for station in df['stationid'].unique():
+            df_table = df[df['stationid'] == station]
+            if self.settings['show_table']:
+                st.markdown(f"#### Station {station}")
+                helper.show_table(df_table, [], table_cfg)
+            if self.settings['show_linechart']:
+                show_linechart(df_table)
+        
+
     def show_menu(self):
-        menu_options = ['Info', 'Show water level plots']
+        menu_options = ['Info', 'Show water level plots', 'Statistics']
         menu_sel = st.sidebar.selectbox('Show', options=menu_options)
         if menu_options.index(menu_sel)==0:
             self.show_info()
         if menu_options.index(menu_sel)==1:
             self.show_waterlevel_plot()
+        if menu_options.index(menu_sel)==2:
+            self.show_stats()

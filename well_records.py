@@ -102,15 +102,18 @@ class Analysis():
         if len(selected)>0:
             selected = selected.iloc[0]
             station_sel = selected['laufnummer']
-            self.show_record(station_sel)
+            cols = st.columns(2)
+            with cols[0]:
+                self.show_record(station_sel)
 
             # show map
             settings={'title': f"Station location:", 'long':'long', 'lat':'lat', 
                 'width':200, 'height': 200}
             df = pd.DataFrame({'long':[selected['long']], 'lat':[selected['lat']]})
             settings['midpoint'] = (selected['lat'], selected['long'] )
-            st.write(settings['title'])
-            plots.location_map(df, settings)
+            with cols[1]:
+                st.write(settings['title'])
+                plots.location_map(df, settings)
             
 
     def show_menu(self):

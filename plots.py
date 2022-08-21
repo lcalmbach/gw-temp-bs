@@ -1,9 +1,9 @@
-from wsgiref.util import setup_testing_defaults
+import streamlit as st
 import folium
 from streamlit_folium import folium_static
 import pandas as pd
+import numpy as np
 import altair as alt
-import streamlit as st
 import helper
 import const as cn
 
@@ -84,6 +84,12 @@ def plot_map(df: pd.DataFrame, settings: dict, categories: dict={}):
     folium_static(m)
 
 def location_map(df: pd.DataFrame, settings: dict):
+    """_summary_
+
+    Args:
+        df (pd.DataFrame): _description_
+        settings (dict): _description_
+    """
     m = folium.Map(location=settings['midpoint'], zoom_start=ZOOM_START_DETAIL, width=400, height=400)
     for index, row in df.iterrows():
         folium.Marker(
@@ -91,14 +97,56 @@ def location_map(df: pd.DataFrame, settings: dict):
         ).add_to(m)
     folium_static(m)
 
-def line_chart(df, settings, regression:bool=True):
+def insert_blank_records(df:pd.DataFrame, settings:dict)->pd.DataFrame:
+    """checks the distance between the x values of a dataframe and inserts new x values with a null y value
+    if the distinacne between rows is larger than settings['max_x_distance']. this will force lines to break in a plot
+    instead of being connected.
+
+    Args:
+        df (pd.DataFrame): data with a x and y column specified in the settings
+        settings (dict):plot settings
+
+    Returns:
+        pd.DataFrame: _description_
+    """    
+    dist=-settings['max_x_distance']
+    df_diff = df[['year']].diff(periods=-1)
+    df_merged=pd.merge(df,df_diff,left_index=True, right_index=True)
+    for index,row in df_merged[df_merged['year_y'] < dist].iterrows():
+        df = df.append({settings['x']:row['year_x'] + 1,settings['y']: np.nan}, ignore_index=True)
+    return df
+
+
+def confidence_band(df, settings):
     title = settings['title'] if 'title' in settings else ''
+    if 'max_x_distance' in settings:
+        df = insert_blank_records(df,settings)
+    line = alt.Chart(df).mark_line().encode(
+        x=alt.X(f"{settings['x']}"),
+        y=alt.Y('mean_wl', title = settings['y_title'], scale=alt.Scale(domain=settings['y_domain'])),
+        tooltip=settings['tooltip']
+        )
+    band = alt.Chart(df).mark_area(opacity=0.5).encode(
+        x=f"{settings['x']}",
+        y='ci_95',
+        y2='ci_05'
+        )
+    plot = (line + band).properties(width=settings['width'], height=settings['height'], title = title)
+    st.altair_chart(plot)
+
+
+def line_chart(df, settings):
+    title = settings['title'] if 'title' in settings else ''
+    if 'x_dt' not in settings: settings['x_dt'] = 'Q'
+    if 'y_dt' not in settings: settings['y_dt'] = 'Q'
+    if 'max_x_distance' in settings:
+        df = insert_blank_records(df,settings)
     chart = alt.Chart(df).mark_line(width = 2, clip=True).encode(
-            x= alt.X(settings['x'], scale=alt.Scale(domain=settings['x_domain'])),
-            y= alt.Y(settings['y'], scale=alt.Scale(domain=settings['y_domain'])),
+            x= alt.X(f"{settings['x']}:{settings['x_dt']}", scale=alt.Scale(domain=settings['x_domain'])),
+            y= alt.Y(f"{settings['y']}:{settings['y_dt']}", scale=alt.Scale(domain=settings['y_domain'])),
             tooltip=settings['tooltip']    
         )
-    if regression:
+    if 'regression' in settings:
         line = chart.transform_regression(settings['x'], settings['y']).mark_line()
         plot = (chart + line).properties(width=settings['width'], height=settings['height'], title = title)
     else:
