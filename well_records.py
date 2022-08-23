@@ -27,7 +27,7 @@ class Analysis():
         self.wl_data = self.get_water_level_data()
         self.monitoring_stations = list(self.wl_data['stationid'].unique())
 
-
+    
     @st.cache
     def get_water_level_data(self):
         df = gw_data.get_standard_dataset('wl-level')
@@ -35,6 +35,7 @@ class Analysis():
         df = df[df['value'] < 500]
         df['year'] = df['date'].dt.year
         return df
+
 
     def show_record(self, id):
         df =  self.well_records[ self.well_records['laufnummer'] == id]

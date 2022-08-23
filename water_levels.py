@@ -9,6 +9,7 @@ from water_levels_texts import texts
 import json
 import helper
 import plots
+import pymannkendall as mk
 
 import const as cn
 from well_records_texts import texts
@@ -51,7 +52,7 @@ class Analysis():
         df['year'] = df['date'].dt.year
         return df
     
-    #@st.cache
+    @st.cache
     def get_precip_data(self):
         df = gw_data.get_standard_dataset('meteo')
         df = df[['timestamp','precip_sum']]
@@ -208,7 +209,6 @@ class Analysis():
                 self.settings['show_linechart']=st.checkbox('Show linechart', value=True)
                 self.settings['temporal_aggregation'] = 'year'
                 self.settings['aggregation_func'] = 'mean'
-                self.settings['group_plot'] = st.selectbox('Group plots by', options=options_groupplots)
 
         def show_linechart(df):
             plot_cfg = {'x':self.settings['temporal_aggregation'], 'y':'mean_wl','title':f'Mean waterlevel for station {station}', 'width':800,'height':400, 'y_title':'mean waterlevel (masl)'}
@@ -252,8 +252,52 @@ class Analysis():
                 show_linechart(df_table)
         
 
+    def show_trend_analysis(self):
+        def get_settings():
+            with st.sidebar.expander("⚙️Settings",expanded=True):
+                self.settings['show_table']=st.checkbox('Show stat. results table', value=True)
+                self.settings['show_linechart']=st.checkbox('Show linechart', value=True)
+
+        def get_filter():
+            with st.sidebar.expander("🔎 Filter", expanded=True):
+                options = ['<select stations>'] + self.monitoring_stations
+                self.settings['sel_stations'] = st.multiselect('Station', options=options,help='If no station is selected, all stations will be analysed')
+                if not self.settings['sel_stations']:
+                    self.settings['sel_stations'] = list(self.monitoring_stations)
+                options = ['Show all', 'Increasing', 'Decreasing', 'Has trend', 'No trend']
+                show_trend = st.selectbox('Show increasing trends', options)
+                self.settings['show_trend'] = options.index(show_trend)
+
+        get_filter()
+        get_settings()
+        df = self.wl_data.copy()
+        df['month'] = df['date'].dt.month
+        df['day'] = 15
+        df['month_date'] = pd.to_datetime(df[['year','month','day']])
+        df = df = df[['year','month','month_date','stationid','value']].groupby(['year','month','month_date','stationid']).agg('mean').reset_index()
+        result_df = pd.DataFrame()
+        for station in self.settings['sel_stations']:
+            df_filtered = df[df['stationid'] == station]
+            values = list(df_filtered['value'])
+            result = mk.original_test(values)
+            row = pd.DataFrame({'station':[station], 'trend':[result.trend], 'p':[result.p], 'z':[result.z], 'Tau':[result.Tau], 's':[result.s], 'var_s':[result.var_s], 'slope':[result.slope], 'intercept':[result.intercept]})
+            
+            show_flag = (self.settings['show_trend'] == 0) or (self.settings['show_trend'] == 1 & result.trend=='increasing') or (self.settings['show_trend'] == 2 & result.trend=='decreasing') or (self.settings['show_trend'] == 3 & result.h == True)  or (self.settings['show_trend'] == 4 & result.h ==False)
+            if show_flag:
+                result_df=result_df.append(row, ignore_index = True)
+                if self.settings['show_linechart']:
+                    cfg = {'title':f"Station {station}, trend: {result.trend}, p={result.trend}",'x':'month_date', 'y': 'value', 'x_title':'','y_title':'wl (masl)', 'tooltip':['stationid','month_date', 
+                        'value'], 'width':1000, 'height':400}
+                    cfg['y_domain']= [df_filtered['value'].min()-0.5, df_filtered['value'].max()+0.5] 
+                    cfg['x_domain']= [df_filtered['month_date'].min(), df_filtered['month_date'].max()] 
+                    plots.time_series_chart(df_filtered, cfg)
+        if show_flag:
+            st.markdown('### Summary Table')
+            st.write(result_df)
+           
+
     def show_menu(self):
-        menu_options = ['Info', 'Show water level plots', 'Statistics']
+        menu_options = ['Info', 'Water level plots', 'Statistics', 'Trend analysis']
         menu_sel = st.sidebar.selectbox('Show', options=menu_options)
         if menu_options.index(menu_sel)==0:
             self.show_info()
@@ -261,3 +305,5 @@ class Analysis():
             self.show_waterlevel_plot()
         if menu_options.index(menu_sel)==2:
             self.show_stats()
+        if menu_options.index(menu_sel)==3:
+            self.show_trend_analysis()

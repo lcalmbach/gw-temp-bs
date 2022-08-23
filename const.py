@@ -1,26 +1,16 @@
-config = 'local'
-cfg = {
-    'local': {
-        'data_source': {'wl-level':'./data/100164.gzip', 
-        'rheinpegel': './data/100089.gzip', 
-        'well-records': './data/100182.gzip',
-        'meteo':'./data/meteo_blue_temp_prec.gzip',
-        'gw-temperature': './data/1000179.gzip',
-        'water-quality-values': './data/100067_values.gzip',
-        'water-quality-parameters': './data/100067_parameters.gzip'
-        }
-    },
-    's3': {
-        'data_source': {'wl-level':'s3://lc-opendata01/100164.gzip', 
-        'rheinpegel': 's3://lc-opendata01/100089.gzip', 
-        'well-records': 's3://lc-opendata01/100182.gzip',
-        'meteo':'s3://lc-opendata01/meteo_blue_temp_prec.gzip',
-        'temperature': 'todo'
-        }
+config = 's3'
+base= {'local':'./data/',
+        's3': 'https://lc-opendata01.s3.amazonaws.com/'}
+datasource = {
+        'wl-level':f'{base[config]}100164.gzip', 
+        'rheinpegel': f'{base[config]}100089.gzip', 
+        'well-records': f'{base[config]}100182.gzip',
+        'meteo':f'{base[config]}meteo_blue_temp_prec.gzip',
+        'gw-temperature': f'{base[config]}1000179.gzip',
+        'water-quality-values': f'{base[config]}100067_values.gzip',
+        'water-quality-parameters': f'{base[config]}100067_parameters.gzip'
     }
-}
 
-datasource = cfg[config]['data_source']
 station_grid_fields = ['laufnummer','art','street','house_number','geology','gwl_elevation','depth_m', 'lat', 'long']
 wq_sample_parameter = ["station_id", 'date', 'sampleno']
 wq_value_grid_fields = ['parameter','value','unit','detection_limit']

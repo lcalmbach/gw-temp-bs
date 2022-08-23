@@ -2,7 +2,8 @@ import pandas as pd
 import const as cn
 import streamlit as st
 
-#@st.cache
+
+@st.cache
 def get_well_records(stations_list: list)->pd.DataFrame:
     df = pd.read_parquet(cn.datasource['well-records'])
 
@@ -14,15 +15,15 @@ def get_well_records(stations_list: list)->pd.DataFrame:
     if stations_list != []:
         stations_list = [str(x) for x in stations_list]
         df = df[df['laufnummer'].astype(str).isin(stations_list)]
-
     return df
 
-def get_standard_dataset(datasource):
+
+def get_standard_dataset(datasource:str)->pd.DataFrame:
     df = pd.read_parquet(cn.datasource[datasource])
     return df
 
-#@st.cache
-def get_water_quality_data():
+@st.cache
+def get_water_quality_data()->pd.DataFrame:
     df = pd.read_parquet(cn.datasource['water-quality-values'])
     columns = ['station_id', 'probenahmedatum_date','parameter', 'wert', 'wert_num', 'bg', 'einheit','probennr', 'nd_flag']
     df = df[columns]
