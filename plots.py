@@ -6,6 +6,7 @@ import numpy as np
 import altair as alt
 import helper
 import const as cn
+import datetime
 
 ZOOM_START_DETAIL = 13
 
@@ -97,6 +98,26 @@ def location_map(df: pd.DataFrame, settings: dict):
         ).add_to(m)
     folium_static(m)
 
+# not working, needs to be fixed
+def insert_blank_time_records(df:pd.DataFrame, settings:dict)->pd.DataFrame:
+    """checks the distance between the x values of a dataframe and inserts new x values with a null y value
+    if the distinacne between rows is larger than settings['max_x_distance']. this will force lines to break in a plot
+    instead of being connected.
+
+    Args:
+        df (pd.DataFrame): data with a x and y column specified in the settings
+        settings (dict):plot settings
+
+    Returns:
+        pd.DataFrame: _description_
+    """    
+
+    dist = -settings['max_x_distance']
+    df['diff'] = pd.to_timedelta(df[settings['x']].diff(-1).dt.total_seconds().div(60*60*24))
+    for index,row in df[df['diff'] < datetime.timedelta(days=dist)].iterrows():
+        df = df.append({settings['x']:row[settings['x']] + datetime.timedelta(days=1),settings['y']: np.nan}, ignore_index=True)
+    return df
+
 def insert_blank_records(df:pd.DataFrame, settings:dict)->pd.DataFrame:
     """checks the distance between the x values of a dataframe and inserts new x values with a null y value
     if the distinacne between rows is larger than settings['max_x_distance']. this will force lines to break in a plot
@@ -109,11 +130,11 @@ def insert_blank_records(df:pd.DataFrame, settings:dict)->pd.DataFrame:
     Returns:
         pd.DataFrame: _description_
     """    
-    dist=-settings['max_x_distance']
-    df_diff = df[['year']].diff(periods=-1)
-    df_merged=pd.merge(df,df_diff,left_index=True, right_index=True)
-    for index,row in df_merged[df_merged['year_y'] < dist].iterrows():
-        df = df.append({settings['x']:row['year_x'] + 1,settings['y']: np.nan}, ignore_index=True)
+
+    dist = -settings['max_x_distance']
+    df['diff'] = df[[settings['x']]].diff(periods=-1)
+    for index,row in df[df['diff'] < dist].iterrows():
+        df = df.append({settings['x']:row['diff'] + 1,settings['y']: np.nan}, ignore_index=True)
     return df
 
 
@@ -244,6 +265,10 @@ def time_series_chart(df, settings, regression:bool=True):
     #    y= 'y'
     #    )
     title = settings['title'] if 'title' in settings else ''
+
+    #if 'max_x_distance' in settings:
+    #    df = insert_blank_time_records(df, settings)
+
     chart = alt.Chart(df).mark_line(point=alt.OverlayMarkDef(color='blue')).encode(
         x= alt.X(f"{settings['x']}:T"),#, scale=alt.Scale(domain=settings['x_domain']), title=settings['x_title']),
         y= alt.Y(f"{settings['y']}:Q", scale=alt.Scale(domain=settings['y_domain']), title=settings['y_title']),

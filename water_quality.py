@@ -29,7 +29,7 @@ class Analysis():
         self.well_records = data.get_well_records(self.stations_list)
         self.well_records['laufnummer']=self.well_records['laufnummer'].astype(int)
         self.geology = list(self.well_records['geology'].unique())
-        self.guideline = pd.read_csv(f"./data/guideline_ch_single_obs.csv",sep=';')
+        self.guideline = pd.read_csv(cn.datasource['wq_guidelines'],sep=';')
         gl = self.guideline[['parameter','value','unit']]
         gl.columns = ['parameter','gl_value','gl_unit']
         self.wq_parameters = self.wq_parameters.merge(gl, on='parameter', how='left')
@@ -107,7 +107,7 @@ class Analysis():
                 self.settings['show_map']=st.checkbox("Show map", help='Maps required data to be aggregated if multiple sample over time are available from the same station')
                 if self.settings['show_map']:
                     options = ['mean','min','max','std']
-                    self.settings['map_aggregation'] = st.selectbox("Aggregation for station values",options=options)
+                    self.settings['map_aggregation'] = st.selectbox("Aggregation for station values on map", options=options)
                 self.settings['y_domain'] = [ymin, ymax]
 
 
@@ -127,6 +127,8 @@ class Analysis():
                 df = df[df['date'].dt.year.isin(filter['years'])]
             settings = get_settings()
             st.markdown(f'**{len(df)} observations for selected parameter {parameter}**')
+            if len(df)>0 and df.iloc[0]['gl_value']>0:
+                st.markdown(f"Guideline value: {df.iloc[0]['gl_value']}")
             settings = {'height':helper.get_auto_grid_height(df,400), 'selection_mode':'single', 'fit_columns_on_grid_load': False}
             helper.show_table(df,cols,settings)
             filename = f"{parameter}.csv"

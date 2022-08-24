@@ -3,7 +3,7 @@ import const as cn
 import streamlit as st
 
 
-@st.cache
+@st.cache (allow_output_mutation=True)
 def get_well_records(stations_list: list)->pd.DataFrame:
     df = pd.read_parquet(cn.datasource['well-records'])
 
