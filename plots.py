@@ -101,8 +101,9 @@ def location_map(df: pd.DataFrame, settings: dict):
 # not working, needs to be fixed
 def insert_blank_time_records(df:pd.DataFrame, settings:dict)->pd.DataFrame:
     """checks the distance between the x values of a dataframe and inserts new x values with a null y value
-    if the distinacne between rows is larger than settings['max_x_distance']. this will force lines to break in a plot
-    instead of being connected.
+    if the distance between rows is larger than settings['max_x_distance']. this will force lines to break in a plot
+    instead of being connected. note that the date column is first converted to int (unix msec) then the difference is 
+    calculated on the int64 column.
 
     Args:
         df (pd.DataFrame): data with a x and y column specified in the settings
@@ -112,10 +113,12 @@ def insert_blank_time_records(df:pd.DataFrame, settings:dict)->pd.DataFrame:
         pd.DataFrame: _description_
     """    
 
-    dist = -settings['max_x_distance']
-    df['diff'] = pd.to_timedelta(df[settings['x']].diff(-1).dt.total_seconds().div(60*60*24))
-    for index,row in df[df['diff'] < datetime.timedelta(days=dist)].iterrows():
-        df = df.append({settings['x']:row[settings['x']] + datetime.timedelta(days=1),settings['y']: np.nan}, ignore_index=True)
+    dist = -settings['max_x_distance'] * 24 * 3600 #convert to seconds
+    df['date2'] = (df[settings['x']].astype(np.int64)) / 10**9  #convert to seconds
+    df['diff'] = df['date2'].diff(-1)
+    for index,row in df[df['diff'] < dist].iterrows():
+        df_new_row = pd.DataFrame({settings['x']:row[settings['x']] + datetime.timedelta(1),settings['y']: np.nan}, index=[0])
+        df = pd.concat([df, df_new_row], ignore_index=True)
     return df
 
 def insert_blank_records(df:pd.DataFrame, settings:dict)->pd.DataFrame:
@@ -134,23 +137,25 @@ def insert_blank_records(df:pd.DataFrame, settings:dict)->pd.DataFrame:
     dist = -settings['max_x_distance']
     df['diff'] = df[[settings['x']]].diff(periods=-1)
     for index,row in df[df['diff'] < dist].iterrows():
-        df = df.append({settings['x']:row['diff'] + 1,settings['y']: np.nan}, ignore_index=True)
+        df_new_row = pd.DataFrame({settings['x']:row[settings['x']] + abs(dist), settings['y']: np.nan}, index=[0])
+        df = pd.concat([df, df_new_row], ignore_index=True)
     return df
 
 
 def confidence_band(df, settings):
     title = settings['title'] if 'title' in settings else ''
+    st.write(settings['x'],settings['y'])
     if 'max_x_distance' in settings:
         df = insert_blank_records(df,settings)
     line = alt.Chart(df).mark_line().encode(
         x=alt.X(f"{settings['x']}"),
         y=alt.Y('mean_wl', title = settings['y_title'], scale=alt.Scale(domain=settings['y_domain'])),
-        tooltip=settings['tooltip']
         )
     band = alt.Chart(df).mark_area(opacity=0.5).encode(
         x=f"{settings['x']}",
         y='ci_95',
-        y2='ci_05'
+        y2='ci_05',
+        tooltip=[settings['x'],settings['y'],'ci_95','ci_05']
         )
     plot = (line + band).properties(width=settings['width'], height=settings['height'], title = title)
     st.altair_chart(plot)
@@ -191,6 +196,10 @@ def wl_time_series_chart(df, settings):
     #    x= 'x',
     #    y= 'y'
     #    )
+
+    if 'max_x_distance' in settings:
+        df = insert_blank_time_records(df, settings)
+
     chart = alt.Chart(df).mark_line().encode(
         x = alt.X(f"{settings['x']}:T", scale=alt.Scale(domain=settings['x_domain']), title=settings['x_title']),
         y = alt.Y(f"{settings['y']}:Q", scale=alt.Scale(domain=settings['y_domain']), title=settings['y_title']),
@@ -266,8 +275,8 @@ def time_series_chart(df, settings, regression:bool=True):
     #    )
     title = settings['title'] if 'title' in settings else ''
 
-    #if 'max_x_distance' in settings:
-    #    df = insert_blank_time_records(df, settings)
+    if 'max_x_distance' in settings:
+        df = insert_blank_time_records(df, settings)
 
     chart = alt.Chart(df).mark_line(point=alt.OverlayMarkDef(color='blue')).encode(
         x= alt.X(f"{settings['x']}:T"),#, scale=alt.Scale(domain=settings['x_domain']), title=settings['x_title']),

@@ -1,10 +1,9 @@
 import streamlit  as st
 import streamlit.components.v1 as components
 import pandas as pd
-import altair as alt
-import numpy as np
-from datetime import datetime, date, timedelta
-from scipy import stats
+from datetime import date, timedelta
+# from scipy import stats
+
 from water_levels_texts import texts
 import helper
 import plots
@@ -155,6 +154,7 @@ class Analysis():
                 max_y = int(df['value'].max())+1
                 settings['y_domain'] = [min_y, max_y]
                 settings['x_domain'] = list(pd.to_datetime([date(start_year,1,1), date(end_year,12,31)]).astype(int) / 10 ** 6)
+                settings['max_x_distance'] = 30
                 plots.wl_time_series_chart(df, settings)
                 filename = f"{station_sel}_wl.csv"
                 st.markdown(helper.get_table_download_link(df, filename), unsafe_allow_html=True)
@@ -208,8 +208,8 @@ class Analysis():
                 self.settings['temporal_aggregation'] = 'year'
                 self.settings['aggregation_func'] = 'mean'
 
-        def show_linechart(df):
-            plot_cfg = {'x':self.settings['temporal_aggregation'], 'y':'mean_wl','title':f'Mean waterlevel for station {station}', 'width':800,'height':400, 'y_title':'mean waterlevel (masl)'}
+        def get_line_chart_settings(df, station):
+            plot_cfg = {'x':'year', 'y':'mean_wl','title': f'Mean waterlevel for station {station}', 'width':800,'height':400, 'y_title':'mean waterlevel (masl)'}
             plot_cfg['max_x_distance'] = 1
             plot_cfg['x_dt']='O'
             df['ci_95']= df['mean_wl'] + 1.65 * df['std_wl']
@@ -217,9 +217,7 @@ class Analysis():
             plot_cfg['x_domain'] = (df[self.settings['temporal_aggregation']].min(), df[self.settings['temporal_aggregation']].max())
             plot_cfg['y_domain'] = (df['ci_05'].min()-0.4, df['ci_95'].max()+0.4)
             plot_cfg['tooltip']= [self.settings['temporal_aggregation'],'mean_wl' ]
-            if self.settings['show_linechart']:
-                plots.confidence_band(df, plot_cfg)
-                st.write(f"Yearly average for waterlevels of station {station}, shaded area show the 90% confidence interval")
+            return plot_cfg
 
         options = ['<select stations>'] + self.monitoring_stations
         sel_stations = st.sidebar.multiselect('Station', options=options,help='If no station is selected, all stations will be analysed')
@@ -234,9 +232,7 @@ class Analysis():
             'std': "standard deviation"}
         
         df = self.wl_data[self.wl_data['stationid'].isin(sel_stations)]
-
         get_settings()
-
         df = df[[self.settings['temporal_aggregation'],'stationid','value']].groupby(['stationid',self.settings['temporal_aggregation']]).agg(options_agg_functions).reset_index()
         df.columns=['stationid', 'year', 'min_wl', 'max_wl', 'mean_wl', 'std_wl', 'count']
         df[['min_wl', 'max_wl', 'mean_wl', 'std_wl']] = df[['min_wl', 'max_wl', 'mean_wl', 'std_wl']].round(2)
@@ -247,7 +243,9 @@ class Analysis():
                 st.markdown(f"#### Station {station}")
                 helper.show_table(df_table, [], table_cfg)
             if self.settings['show_linechart']:
-                show_linechart(df_table)
+                plot_cfg = get_line_chart_settings(df_table, station)
+                plots.confidence_band(df_table, plot_cfg)
+                st.write(f"Yearly average for waterlevels of station {station}, shaded area showes the 90% confidence interval")
         
 
     def show_trend_analysis(self):
@@ -266,14 +264,14 @@ class Analysis():
                 show_trend = st.selectbox('Trend direction', options)
                 self.settings['show_trend'] = int(options.index(show_trend))
 
-        def show_linechart(df, result,station):
+        def get_linechart_settings(df, result,station):
             cfg = {'title':f"Station {station}, trend: {result.trend}, p={result.p:.4f}",'x':'month_date', 'y': 'value', 'x_title':'','y_title':'wl (masl)', 'tooltip':['stationid','month_date', 
                 'value'], 'width':1000, 'height':400}
             cfg['y_domain']= [df['value'].min()-0.5, df['value'].max()+0.5] 
             cfg['x_domain']= [df['month_date'].min(), df['month_date'].max()] 
             cfg['max_x_distance']=90
-            plots.time_series_chart(df, cfg)
-
+            return cfg
+            
         with st.expander('Info'):
             st.markdown(texts['trend_intro'])
         get_filter()
@@ -291,10 +289,11 @@ class Analysis():
             row = pd.DataFrame({'station':[station], 'trend':[result.trend], 'p':[result.p], 'z':[result.z], 'Tau':[result.Tau], 's':[result.s], 'var_s':[result.var_s], 'slope':[result.slope], 'intercept':[result.intercept]})
             criteria_met = (self.settings['show_trend'] == 0) or (self.settings['show_trend'] == 1 and result.trend=='increasing') or (self.settings['show_trend'] == 2 and result.trend=='decreasing') or (self.settings['show_trend'] == 3 and result.h == True)  or (self.settings['show_trend'] == 4 and result.h == False)
             if criteria_met:
-                result_df=result_df.append(row, ignore_index = True)
+                result_df = result_df.append(row, ignore_index = True)
                 if self.settings['show_linechart']:
-                    show_linechart(df_filtered, result, station)
-                    
+                    cfg = get_linechart_settings(df_filtered, result, station)
+                    plots.time_series_chart(df_filtered, cfg)
+
         if self.settings['show_table']:
             st.markdown('### Summary Table')
             st.markdown(f"{len(result_df)} records found." + texts['trend_table_addition'] if not self.settings['show_linechart'] else '')
@@ -307,7 +306,8 @@ class Analysis():
                 df_filtered = df[df['stationid'] == station]
                 values = list(df_filtered['value'])
                 result = mk.original_test(values)
-                show_linechart(df_filtered, result, station)
+                cfg = get_linechart_settings(df_filtered, result, station)
+                plots.time_series_chart(df_filtered, cfg)
            
 
     def show_menu(self):

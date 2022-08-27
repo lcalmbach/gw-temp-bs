@@ -1,6 +1,4 @@
-from http.client import OK
 import streamlit as st
-import pandas as pd
 
 from about import About
 import helper
@@ -8,12 +6,11 @@ import temperature
 import well_records
 import water_levels
 import water_quality
-import const as cn
 
-__version__ = '0.0.9'
+__version__ = '0.0.11'
 __author__ = 'Lukas Calmbach'
 __author_email__ = 'lcalmbach@gmail.com'
-VERSION_DATE = '2022-08-24'
+VERSION_DATE = '2022-08-27'
 GIT_REPO = 'https://github.com/lcalmbach/gw-temp-bs'
 APP_NAME = 'groundwater.bs'
 APP_ICON = "💧"

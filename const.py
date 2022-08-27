@@ -8,7 +8,7 @@ datasource = {
         'meteo':f'{base[config]}meteo_blue_temp_prec.gzip',
         'gw-temperature': f'{base[config]}1000179.gzip',
         'water-quality-values': f'{base[config]}100067_values.gzip',
-        'water-quality-parameters': f'{base[config]}100067_parameters.gzip',
+        'water-quality-parameters': f'{base[config]}100067_parameter.gzip',
         'wq_guidelines': f'{base[config]}guideline_ch_single_obs.csv'
     }
 

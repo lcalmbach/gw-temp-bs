@@ -1,10 +1,8 @@
 import streamlit  as st
 import streamlit.components.v1 as components
 import pandas as pd
-import altair as alt
-import numpy as np
-from datetime import datetime, date, timedelta
-from scipy import stats
+from datetime import datetime, date
+# from scipy import stats
 from water_quality_texts import texts
 import helper
 import plots

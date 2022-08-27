@@ -27,7 +27,7 @@ The Mann-Kendall test is a statistical hypothesis test, where the h0-hypothesis 
 "fig": [
         "Figure {}: Location of stations with available groundwater temperature observations. Min, max und average values are calculated based on monthly averaged values. Use the cursor to discover the depth and mean temperature for these locations.",
         "Figure {}: Spatial distribution of positive, negative, and neutral groundwater temperature trends.",
-        "Figure {}: Surface temperature in the study area.",
+        "Figure {}: Surface temperature in the study area with linear regression line.",
         "Figure {}: Comparison of yearly average for surface temperature and groundwater temperature.",
         "Figure {}: Heatmap for average temperature values for all stations in the groundwater monitoring network with available temperature data. Stations are ordered by groundwater sampling depth, with shallow stations on the top of the chart. Hover the mouse cursor over a colored rectangle on the plot to show additional information for the respective year and station.",
 

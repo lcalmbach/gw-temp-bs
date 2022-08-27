@@ -4,8 +4,8 @@ The water level shows a list of wells with associated water level monitoring inf
 
 ### Menu options
 **water level plot**: This menu option allows to display water levels plots for {1} monitoring wells. Each water level plot may be compared to 
-- the timeseries for precipitation ([datasource](https://data.bs.ch/explore/dataset/100051)) 
-- the Rhine-water level ([datasource](https://data.bs.ch/explore/dataset/100089))
+- Rhine waterlevel ([datasource](https://data.bs.ch/explore/dataset/100089))
+- precipitation, weekly average ([datasource](https://www.meteoblue.com/en/historyplus))
 
 for comparison. In addition the well record information can be displayed and the position of the selected map on a map.
 """,

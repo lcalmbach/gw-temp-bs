@@ -276,7 +276,8 @@ class Analysis():
             settings['x_domain'] = [int(df['year'].min()), int(df['year'].max())] 
             settings['y_domain'] = [7,14] 
             settings['tooltip'] = ["year", "mean_surface_temperature"]
-            plots.line_chart(df, settings, True)
+            settings['regression'] = True
+            plots.line_chart(df, settings)
         
         def get_compare_temperatures_data(df_gw:pd.DataFrame, df_st:pd.DataFrame):
             df_gw = df_gw[['year', 'temperature']].groupby(['year']).agg(['mean']).reset_index()
