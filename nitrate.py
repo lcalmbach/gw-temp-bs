@@ -18,6 +18,8 @@ GUIDELINE_NO3_N = 5.6
 class Analysis():
     def __init__(self):
         self.data = gw_data.get_standard_dataset('water-quality-values')
+        st.write(self.data[self.data['parameter']=='Nitrat'])
+        # seems to Nitrate-N as well
         self.data.loc[self.data['parameter']=='Nitrat', 'wert_num'] = self.data['wert_num'] / 4.427
         self.data.loc[self.data['parameter']=='Nitrat', 'parameter'] = 'Nitrat(N)'
         self.data = self.data[self.data['parameter']=='Nitrat(N)']
@@ -125,7 +127,9 @@ class Analysis():
         plots.plot_colormap(df, settings)
     
 
-    def show_temporal_distribution(self, df):
+    def show_temporal_distribution(self):
+        stations = st.multiselect('Add or remove stations:', options=self.stations, default=[1026, 1061, 1068, 1305, 1316])
+        df = self.data[self.data['station_id'].isin(stations)]
         df['guideline'] = GUIDELINE_NO3_N
         settings = {'x':'probenahmedatum_date', 'y': 'wert_num', 'width':800,'height':400, 'color':'station_id', 'x_title':'', 
             'symbol_size': 40, 'y_title':'Concentration (mg/L)', 'y_domain': [0, 20], 'h_line': 'guideline',
@@ -233,10 +237,11 @@ class Analysis():
         fig_num = helper.show_legend(texts, FIGURE, fig_num) 
 
         # time series
-        df = self.data[self.data['station_id'].isin([1026, 1061, 1068, 1305, 1316])]
-        st.markdown(texts['time_series'].format(fig_num), unsafe_allow_html=True)
-        self.show_temporal_distribution(df)
         
+        st.markdown(texts['time_series'].format(fig_num), unsafe_allow_html=True)
+        self.show_temporal_distribution()
+        fig_num = helper.show_legend(texts, FIGURE, fig_num) 
+
         text = texts['conclusion'].format(self.years_of_data, len(self.stations), GUIDELINE_NO3_N)
         st.markdown(text, unsafe_allow_html=True)
 

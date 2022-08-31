@@ -2,11 +2,9 @@ texts = {
 'intro': """## Nitrate concentrations in groundwater of Basel since {0} 
 
 
-In nature, water usually contains less than 1 milligram of nitrate-nitrogen per liter. Significantly higher nitrate concentrations can indicate that the drinking water has been contaminated and may pose a serious health concern. The Swiss [Waters Protection Ordinance](https://www.fedlex.admin.ch/eli/cc/1998/2863_2863_2863/de)(WPO) sets the limit for surface water to 5.6 mg/L for nitrate as N (correpsonds to 25 mg/L nitrate as NO3). Common sources of nitrate pollution include nitrogen fertilizers, manure, septic systems and sewage treatment practices. 
+In nature, water usually contains less than 1 milligram of nitrate-nitrogen per liter. Significantly higher nitrate concentrations indicate that the drinking water has been contaminated and may pose a severe health concern. The Swiss [Waters Protection Ordinance](https://www.fedlex.admin.ch/eli/cc/1998/2863_2863_2863/de)(WPO) sets the limit for surface water to 5.6 mg/L for nitrate as N (corresponds to 25 mg/L nitrates as NO3). Common sources of nitrate pollution include nitrogen fertilizers, manure, septic systems, and sewage treatment practices. 
 
-This study uses the water quality monitoring dataset of the Office for environmental Protection of Basel to answer the following questions:
-- Do we find temporal trends of nitrate pollution?
-- Do we find spatial trends in nitrate pollution
+This study analyes temporal and spatial trends in nitrate concentrations in the groundwater of Basel.
 
 ###  Station Locations and data
 The Office for environmental protection of Basel-Stadt (AUE) has published groundwater quality monitoring data since {0} on the Open Gourvernment Data portal [data.bs](https://data.bs.ch/explore/dataset/100179). Figure 1 shows {1} locations of monitoring stations where historic and recent nitrate values are available. Of these, {2} have observations in the last 5 years and take part of the current monitoring program.
@@ -26,11 +24,11 @@ Figure {} shows the spatial distribution of stations with exceedances (red dots)
 """,
 
 "time_series": """#### Temporal development
-Figure {}, showing the trend of nitrate in the wells where most exceedances were encountered, confirms the gradual decrease of nitrate concentration in these wells. Of the five wells, the most recent monitoring event shows that three are below the guideline limit, one is slightly exceeding, and only well 1305 clearly exceeds the guideline limit. In 1999 there was a sharp drop in nitrate concentrations in three of the five wells, which may indicate a laboratory or sampling error rather than an actual drop in concentration. This phenomenon deserves further analysis as this effect happens in three wells simultaneously.
+Figure {}, showing the trend of nitrate in the wells where most exceedances were encountered, confirms the gradual decrease of nitrate concentration in these wells. Of the five wells, the most recent monitoring event shows that three are below the guideline limit, one is slightly exceeding, and only well 1305 clearly exceeds the guideline limit. In 1999 there was a sharp drop in nitrate concentrations in three of the five wells, which may indicate a laboratory or sampling error rather than an actual drop in concentration. A common mistake causing sudden concentration changes in nitrate time-series is concentration conversion: nitrate analysescan be reported as N or NO3. If a nitrate as NO3 concentration is later added to a time series with nitrate as N, its value is 4.4 times higher than its Nitrate as N value. If such values are combined in a time series, the nitrate as NO3 value will cause a peak. Samples from 31.5.2021 seem to be originally reported as N. However, a NO3 to N conversion factor was incorrectly applied to them again, causing the observed drop. This phenomenon deserves further analysis as this effect happens in many wells simultaneously on the same date.
 """,
 
 'conclusion': """### Conclusion
-Data from the {} years of water quality monitoring in {} wells show that the frequency of nitrate guideline level exceedance ({} mg/L) have decreased. The few wells still showing occasional exceedances are limited to the western and southern parts of the canton. The aquifer below the densely populated area of Basel is shallow and unconfined and therefore vulnerable to pollution. In this setting, the low nitrate values should be considered a sign of excellent and effective water protection measures. Continued monitoring will show, if the high groundwater quality can be maintained.
+Data from the {} years of water quality monitoring in {} wells show that the frequency of nitrate guideline level exceedance ({} mg/L) have decreased. The few wells still showing occasional exceedances are limited to the western and southern parts of the canton. The aquifer below the densely populated area of Basel is shallow and unconfined and, therefore, vulnerable to pollution. In this setting, the low nitrate values should be considered a sign of excellent and effective water protection measures. Continued monitoring will show if the high groundwater quality can be maintained. Also, we will examine other pollutants included in the groundwater quality dataset in further interactive articles.
 
 ### Further information
 - [Umweltbericht beider Basel- Nitrat im Grundwasser](https://www.umweltberichtbeiderbasel.bs.ch/indikatoren/indikatoren-uebersicht/16-wasser/nitrat-im-grundwasser.html)
@@ -48,7 +46,7 @@ Data from the {} years of water quality monitoring in {} wells show that the fre
         "Figure {}: Location of water quality monitoring wells where nitrate concentration values are available",
         "Figure {}: Percentage of measured Nitrate concentrations exceeding the guideline level for surface water of 5.6 mg/L (left) and mean average concentrations for nitrate over time (right",
         "Figure {}: Spatial distribution of maxiumum nitrate concentrations for the year selected by the slider above the graph. Red markers indicate exceedances, green markers exceedances below the guideline level.",
-        "Figure {}: Time series of stations having a initial high concentration",
+        "Figure {}: Time series of stations having a initial high concentration. You may add additional wells to the chart or remove existing wells using the multiselectbox above the plot.",
         "Figure {}: heat map of mean annual nitrate ",
     ]
 }
