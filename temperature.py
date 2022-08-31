@@ -12,7 +12,6 @@ import plots
 import const as cn
 import gw_data
 
-MIN_OBSERVATIONS_FOR_MK = 10
 FIGURE = 'fig'
 TABLE = 'tab'
 
@@ -78,7 +77,6 @@ class Analysis():
             st.markdown(texts['mk-menu'])
         DISPLAY_OPTIONS = ['all results', 'increasing', 'decreasing', 'no trend']
         stations = self.select_stations()
-        minimum_number_of_obs = st.sidebar.number_input('Min number of observations', min_value=0, max_value = 20, value = 5)
         display = st.sidebar.selectbox("Display", options = DISPLAY_OPTIONS)
         settings = {'x':'month_date', 'y': 'temperature', 'x_title':'','y_title':'mean temperature °C', 'tooltip':['stationid','month_date', 
             'temperature'], 'width':1000, 'height':400}
@@ -88,7 +86,6 @@ class Analysis():
                 stations = self.stations
             #df_result = pd.DataFrame(columns=['trend','h','p','z','Tau','s','var_s','slope','intercept'])
             num_stations=st.empty()
-            st.markdown(f'Minimum number of temperature observations: {minimum_number_of_obs}')
             settings['x_domain'] = [ f"{self.data['month_date'].min().year}-01-01", f"{self.data['month_date'].max().year}-12-31"]
             min_y = int(self.data['temperature'].min())-1
             max_y = int(self.data['temperature'].max())+1
@@ -99,22 +96,22 @@ class Analysis():
             for station in stations:
                 df = averaged_data[averaged_data['stationid'] == station].sort_values(by='month_date')
                 #settings['x_domain'] = [ f"{df['month_date'].min().year}-01-01", f"{df['month_date'].max().year}-12-31"]
-                if len(df) >= minimum_number_of_obs:
-                    cnt_all_stations += 1
-                    temperatures = list(df['temperature'])
-                    result = mk.original_test(temperatures)
-                    settings['title'] = f"{station}: {result.trend}"
-                    if show_result(result):
-                        cnt_stations+=1
-                        plots.time_series_chart(df, settings)
+                cnt_all_stations += 1
+                temperatures = list(df['temperature'])
+                result = mk.original_test(temperatures)
+                settings['title'] = f"{station}: {result.trend}"
+                if show_result(result):
+                    cnt_stations+=1
+                    plots.time_series_chart(df, settings)
 
-                        summary_df = get_summary_df(df, result)
-                        cols = st.columns([4,5])
-                        with cols[0]:
-                            tab_settings = {'height':280, 'selection_mode':'single', 'fit_columns_on_grid_load': False}
-                            cols=[]
-                            helper.show_table(summary_df, cols,  tab_settings)
+                    summary_df = get_summary_df(df, result)
+                    cols = st.columns([4,5])
+                    with cols[0]:
+                        tab_settings = {'height':280, 'selection_mode':'single', 'fit_columns_on_grid_load': False}
+                        cols=[]
+                        helper.show_table(summary_df, cols,  tab_settings)
             num_stations.markdown(f"{cnt_stations} of {cnt_all_stations} stations shown")
+
 
     def get_heat_map_data(self, stations):
         df = self.data
@@ -137,7 +134,8 @@ class Analysis():
             return text
 
         midpoint = (np.average(station_data['lat']), np.average(station_data['long']))
-        settings = {'midpoint': midpoint, 'layer_type': 'IconLayer', 'tooltip_html': get_tooltip_html()}
+        settings = {'lat':'lat', 'long':'long', 'midpoint': midpoint, 'layer_type': 'IconLayer', 'tooltip_html': get_tooltip_html()}
+        settings['tooltip_cols'] = ['stationid','temp_mean','temp_min','temp_max','year_min','year_max']
         plots.plot_map(station_data, settings)
     
     def show_trend_distribution_map(self, df):
@@ -148,7 +146,8 @@ class Analysis():
             return text
 
         midpoint = (np.average(df['lat']), np.average(df['long']))
-        settings = {'midpoint': midpoint, 'layer_type': 'IconLayer', 'tooltip_html': get_tooltip_html(), 'cat_field':'trend_result'}
+        settings = {'lat':'lat', 'long':'long','midpoint': midpoint, 'layer_type': 'IconLayer', 'tooltip_html': get_tooltip_html(), 'cat_field':'trend_result'}
+        settings['tooltip_cols'] = ['stationid','temp_mean']
         categories = {
             'increasing': {'color': 'orange', 'icon': 'arrow-up'}, 
             'decreasing': {'color': 'blue', 'icon': 'arrow-down'}, 
@@ -158,22 +157,24 @@ class Analysis():
         
 
     def get_regression_table(self, stations):
+        MIN_VALS_4_REGRESSION = 0
         result = {}
         future_date = date(date.today().year + 10, date.today().month, date.today().day)
         for station in stations:
             df = self.data[self.data['stationid']==station].sort_values(by='month_date')
-            min_date = df['month_date'].min()
-            min_date = date(min_date.year, min_date.month, min_date.day)
-            x = list( (df['month_date'] - df['month_date'].min())  / np.timedelta64(1,'D'))
-            y = list(df['temperature'])
-            linreg = stats.linregress(x, y)
-            days_to_future_date = (future_date - min_date).days
-            extrapol_temperature = linreg.intercept + days_to_future_date * linreg.slope
-            row = pd.DataFrame({'stationid': station, 'start_date': min_date, 'r-value': linreg.rvalue, 'intercept':linreg.intercept, 'slope (°C/yr)':linreg.slope*365, '10yr prediction': extrapol_temperature }, index=[0])
-            if len(result)==0:
-                result = row
-            else:
-                result = pd.concat([result, row], ignore_index=True)
+            if len(df) > MIN_VALS_4_REGRESSION:
+                min_date = df['month_date'].min()
+                min_date = date(min_date.year, min_date.month, min_date.day)
+                x = list( (df['month_date'] - df['month_date'].min())  / np.timedelta64(1,'D'))
+                y = list(df['temperature'])
+                linreg = stats.linregress(x, y)
+                days_to_future_date = (future_date - min_date).days
+                extrapol_temperature = linreg.intercept + days_to_future_date * linreg.slope
+                row = pd.DataFrame({'stationid': station, 'start_date': min_date, 'r-value': linreg.rvalue, 'intercept':linreg.intercept, 'slope (°C/yr)':linreg.slope*365, '10yr prediction': extrapol_temperature }, index=[0])
+                if len(result)==0:
+                    result = row
+                else:
+                    result = pd.concat([result, row], ignore_index=True)
         return result
 
     def get_station_data(self):
@@ -189,22 +190,8 @@ class Analysis():
         df['temp_max']=df['temp_max'].round(2)
         df['temp_mean']=df['temp_mean'].round(2)
         return df
-
-
-    def get_valid_stations_data(self, df):
-        """Valid stations have > min_observations_number observations
-
-        Args:
-            df (pd.DataFrame): dataframe with all data
-
-        Returns:
-            pd.DataFrame: data with only valid stations having enough data
-        """
-        df_count = df[['stationid']].groupby(['stationid','temp_mean']).agg(['count']).reset_index()
-        valid_stations = list(df_count[df_count['count'] < MIN_OBSERVATIONS_FOR_MK])
-        df = df[df['stationid'].isin(valid_stations)]
-        return df
     
+
     def get_averaged_data(self, data:pd.DataFrame, groupby)->pd.DataFrame:
         if type(groupby)!=list:
             groupby = [groupby]
@@ -213,6 +200,7 @@ class Analysis():
         df = data[['temperature'] + groupby].groupby(groupby).mean().reset_index()
         df['temperature'] = df['temperature'].round(2)
         return df
+
 
     def report(self):
         """
@@ -296,7 +284,7 @@ class Analysis():
         averaged_data = self.get_averaged_data(self.data,['month','year','month_date'])
         
         # intro
-        st.markdown(texts['intro'], unsafe_allow_html=True)
+        st.markdown(texts['intro'].format(self.data.year.min(), len(self.stations)), unsafe_allow_html=True)
         self.show_location_map(station_data)
         fig_num = helper.show_legend(texts, FIGURE, fig_num) 
         
@@ -312,8 +300,7 @@ class Analysis():
             trends['no_trend'], 
             trends['decreasing']), unsafe_allow_html=True)
         show_table1(result_table, averaged_data)
-        args = [MIN_OBSERVATIONS_FOR_MK]
-        tab_num = helper.show_legend(texts, TABLE,tab_num, args)
+        tab_num = helper.show_legend(texts, TABLE, tab_num)
         
         # show a map showing the spatial distribution
         st.markdown(texts['result_map'], unsafe_allow_html=True)
@@ -350,16 +337,15 @@ class Analysis():
         fig_num = helper.show_legend(texts,FIGURE,fig_num)
         
         # prediction
-        valid_stations = list(station_data[station_data['temp_count'] >= MIN_OBSERVATIONS_FOR_MK]['stationid'])
-        regr_table = self.get_regression_table(valid_stations)
-        regr_table_pos = regr_table[regr_table['slope (°C/yr)']>0]
+        regr_table = self.get_regression_table(list(station_data['stationid']))
+        regr_table_pos = regr_table[regr_table['slope (°C/yr)'] > 0]
         min_slope = regr_table_pos['slope (°C/yr)'].min()
         max_slope = regr_table_pos['slope (°C/yr)'].max()
         mean_slope = regr_table_pos['slope (°C/yr)'].mean()
         min_predict = regr_table_pos['10yr prediction'].min()
         max_predict = regr_table_pos['10yr prediction'].max()
         mean_predict = regr_table_pos['10yr prediction'].mean()
-        st.markdown(texts['prediction'].format(MIN_OBSERVATIONS_FOR_MK,
+        st.markdown(texts['prediction'].format(
             min_slope,
             max_slope,
             mean_slope,
@@ -373,7 +359,7 @@ class Analysis():
         tab_cols.append({'name':'slope (°C/yr)', 'hide':False, 'type':["numericColumn","numberColumnFilter","customNumericFormat"], 'precision':3})
         tab_cols.append({'name':'10yr prediction', 'hide':False, 'type':["numericColumn","numberColumnFilter","customNumericFormat"], 'precision':2})
         selected = helper.show_table(regr_table, tab_cols, settings)
-        tab_num = helper.show_legend(texts, TABLE, tab_num, [MIN_OBSERVATIONS_FOR_MK])
+        tab_num = helper.show_legend(texts, TABLE, tab_num)
         st.markdown(texts['conclusion'].format(min_slope, max_slope,surface_linreg.slope), unsafe_allow_html=True)
         
     def show_menu(self):

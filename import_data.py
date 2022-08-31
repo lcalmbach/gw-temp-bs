@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime, date
-from temperature_texts import texts
+from nitrate_texts import texts
 import requests
 import json
 

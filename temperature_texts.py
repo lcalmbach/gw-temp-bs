@@ -1,5 +1,5 @@
 texts = {
-'intro': """## Groundwater temperature trend since 1993 in Basel (Switzerland)
+'intro': """## Groundwater temperature trend since {0} in Basel (Switzerland)
 
 Temperature is considered to be an important quality indicator for ground and surface water. A higher water temperature limits the solubility of oxygen and various minerals. Higher temperatures in groundwater also stimulate microbial activity. The observation in ground water temperature may contribute important information to better understand climate change process. To date, an overall increase in groundwater temperature can be observed across Switzerland ([bafu.admin.ch](https://www.bafu.admin.ch/bafu/en/home/topics/water/info-specialists/state-of-waterbodies/state-of-groundwater/groundwater-temperature.html)). This study attempts to characterize the temperature state and past trend in the groundwater of the canton of Basel-Stadt (northern Switzerland) and to answer the following questions:
 - Is the groundwater temperature generally increasing?
@@ -7,7 +7,7 @@ Temperature is considered to be an important quality indicator for ground and su
 - What groundwater temperatures can be expected in ten years?
 
 ### Location of Stations
-The Office for environmental protection of Basel-Stadt (AUE) has published 30 years of groundwater monitoring data on the Open Gourvernment Data portal [data.bs](https://data.bs.ch/explore/dataset/100067). Figure 1 shows the location of all monitoring wells with available temperature measurements in the study area. These wells are sampled for water quality parameters primarily. According to the [Hydrologisches Jahrbuch](https://www.aue.bs.ch/dam/jcr:872ee028-68e7-4d85-8fb9-2477be116423/Hydrologisches-Jahrbuch-2020-Grundwasserstand.pdf), water levels and temperatures are recorded in many more stations dedicated to continous water level recording. However, this data is not yet available publically.
+The Office for environmental protection of Basel-Stadt (AUE) has published its groundwater temperature monitoring data since {0} on the Open Gorvernment Data portal [data.bs](https://data.bs.ch/explore/dataset/100067). Figure 1 shows the location of all monitoring sites with available temperature measurements in the study area. At most of these sites, the temperature ist registred hourly. To optize processing time, these values have been aggregated to daily averages.
 """,
 
 'eval': """## Methodology
@@ -21,7 +21,7 @@ The Mann-Kendall test is a statistical hypothesis test, where the h0-hypothesis 
 'tab':[
         """Table {}: Mann-Kendall results for all stations having a minimum of 10 temperature observations. The p-value reflects the probability for the given distribution of positive and negative slopes in the time series to represent the outcome, that the data is not increasing or decreasing. The lower the p-value, the higher the chance that the time series follows an increasing or decreasing trend.""",
 
-        """Table {}: Linear regression results for all stations having a minimum of {} temperature observations. r-value= pearson-correlation coefficient: a values close to one indicate a high correlation, values close to zero a low correlation, intercept: y-axis intercept of the correlation line, slope: slope of line in °Cyear, 10yr prediction: extrapolation of correlation line to the date 10 years from today."""
+        """Table {}: Linear regression results for groundwater temperature time series. r-value= pearson-correlation coefficient: a values close to one indicate a high correlation, values close to zero a low correlation, intercept: y-axis intercept of the correlation line, slope: slope of line in °C/year, 10yr prediction: extrapolation of correlation line to the date 10 years from today."""
     ],
 
 "fig": [
@@ -52,12 +52,18 @@ The heatmap allows us to appreciate time series data density and completeness. M
 """,
 
 'prediction': """### 10 Year Groundwater Temperature Prediction
-A linear regression was conducted on all stations having a minimum number of {} temperature observations. Increasing trend rates are estimated using the intercept and slope of the linear regression. slopes range from {:.2f} to {:.2f} °C/yr with an average value of {:.2f} °C/yr. Extrapolating the linear trend over the next ten years therefore, may lead to a groundwater temperature of between {:.1f} and {:.1f} °C and an average of {:.1f} °C.
+A linear regression was conducted on stations of the groundwater temperature monitoring stations. Increasing trend rates are estimated using the intercept and slope of the linear regression. slopes range from {:.2f} to {:.2f} °C/yr with an average value of {:.2f} °C/yr. Extrapolating the linear trend over the next ten years therefore, may lead to a groundwater temperature of between {:.1f} and {:.1f} °C and an average of {:.1f} °C.
 """,
 
 'conclusion': """### Conclusion
-This study has found that nearly half of all stations in the groundwater monitoring network of Basel show an increasing temperature trend. Temperature increase per year varies between {:.2f} and {:.2f} °C/year, based on the linear regression calculation. This is considerably higher than the observed surface temperature increase during the same period of {:.2f}°C/year. While the increasing surface temperature may partly explain the increasing temperature trend in groundwater, this fact does not explain why the process should be stronger in the subsurface than on the surface. The difference may be explained by a gradual change in recharge dynamics. In such a scenario, groundwater recharge would gradually shift to the warmer season. In an area of intensive urban residential and industrial land use, artificial processes represent additional suspects for impacting the groundwater temperature. Underground constructions and heat exchange pumps used for heating or cooling are potential candidates for such processes. However, all mentioned processes are mere candidates to explain the observed temperature trend phenomenon. Additional data and research is required to confirm these hypotheses.
+This study has found that nearly half of all stations in the groundwater monitoring network of Basel show an increasing temperature trend. Temperature increase per year varies between {:.2f} and {:.2f} °C/year, based on the linear regression calculation. This is considerably higher than the observed surface temperature increase during the same period of {:.2f}°C/year. While the increasing surface temperature may partly explain the increasing temperature trend in groundwater, this fact does not explain why the process should be stronger in the subsurface than on the surface. In an area of intensive urban residential and industrial land use, artificial processes represent additional suspects for impacting the groundwater temperature. Underground constructions and heat exchange pumps used for heating or cooling are potential candidates for such processes. However, all mentioned processes are mere candidates to explain the observed temperature trend phenomenon. Additional data and research is required to confirm these hypotheses.
+
+#### More information 
+- [Umweltbericht beider Basel](https://www.umweltberichtbeiderbasel.bs.ch/indikatoren/indikatoren-uebersicht/16-wasser/wassertemperatur-grundwasser.html)
+- [Groundwater temperature (Federal Office for the Environment FOEN)](https://www.bafu.admin.ch/bafu/en/home/topics/water/info-specialists/state-of-waterbodies/state-of-groundwater/groundwater-temperature.html)
+
 """,
+
 
 'mk-menu':"""This menu item allows to conduct and inspect the [Mann-Kendall test](https://wikitia.com/wiki/Mann-Kendall_trend_test) on all or a selection of wells. The table below provides more detail on the temperature stastistics as well as on the test results. The line on the plots represents the [Theil–Sen estimator](https://en.wikipedia.org/wiki/Theil%E2%80%93Sen_estimator).
 

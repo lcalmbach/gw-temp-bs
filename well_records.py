@@ -5,7 +5,7 @@ import altair as alt
 import numpy as np
 from datetime import datetime, date, timedelta
 from scipy import stats
-from temperature_texts import texts
+from nitrate_texts import texts
 import helper
 import plots
 
