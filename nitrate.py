@@ -18,8 +18,6 @@ GUIDELINE_NO3_N = 5.6
 class Analysis():
     def __init__(self):
         self.data = gw_data.get_standard_dataset('water-quality-values')
-        st.write(self.data[self.data['parameter']=='Nitrat'])
-        # seems to Nitrate-N as well
         self.data.loc[self.data['parameter']=='Nitrat', 'wert_num'] = self.data['wert_num'] / 4.427
         self.data.loc[self.data['parameter']=='Nitrat', 'parameter'] = 'Nitrat(N)'
         self.data = self.data[self.data['parameter']=='Nitrat(N)']
@@ -38,11 +36,6 @@ class Analysis():
         return df
 
 
-    def select_stations(self):
-        stations = st.sidebar.multiselect('Select stations', options = self.stations, help='For no selection, all stations are included')
-        return stations
-
-    
     def get_heat_map_data(self, stations):
         df = self.data
         if stations != []:
@@ -73,43 +66,6 @@ class Analysis():
         settings['tooltip_cols'] = ['station_id','max_nitrate','mean_nitrate','nbr_observations','first_year','last_year']
         plots.plot_map(df, settings)
     
-
-    def show_trend_distribution_map(self, df):
-        def get_tooltip_html():
-            text = """
-            <b>Station:</b> {}<br/>           
-            <b>Mean temperature:</b> {}<br/>"""
-            return text
-
-        midpoint = (np.average(df['lat']), np.average(df['long']))
-        settings = {'midpoint': midpoint, 'layer_type': 'IconLayer', 'tooltip_html': get_tooltip_html(), 'cat_field':'trend_result'}
-        categories = {
-            'increasing': {'color': 'orange', 'icon': 'arrow-up'}, 
-            'decreasing': {'color': 'blue', 'icon': 'arrow-down'}, 
-            'no trend': {'color': 'lightgray', 'icon': 'arrow-right'}
-        }
-        plots.plot_map(df, settings, categories)
-        
-
-    def get_regression_table(self, stations):
-        result = {}
-        future_date = date(date.today().year + 10, date.today().month, date.today().day)
-        for station in stations:
-            df = self.data[self.data['stationid']==station].sort_values(by='month_date')
-            min_date = df['month_date'].min()
-            min_date = date(min_date.year, min_date.month, min_date.day)
-            x = list( (df['month_date'] - df['month_date'].min())  / np.timedelta64(1,'D'))
-            y = list(df['temperature'])
-            linreg = stats.linregress(x, y)
-            days_to_future_date = (future_date - min_date).days
-            extrapol_temperature = linreg.intercept + days_to_future_date * linreg.slope
-            row = pd.DataFrame({'stationid': station, 'start_date': min_date, 'r-value': linreg.rvalue, 'intercept':linreg.intercept, 'slope (°C/yr)':linreg.slope*365, '10yr prediction': extrapol_temperature }, index=[0])
-            if len(result)==0:
-                result = row
-            else:
-                result = pd.concat([result, row], ignore_index=True)
-        return result
-
 
     def show_spatial_distribution(self, df):
         def get_tooltip_html():

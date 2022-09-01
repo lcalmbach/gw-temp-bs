@@ -366,9 +366,6 @@ class Analysis():
         MENU_OPTIONS = ['Report','Mann Kendall Test']
         menu_item = st.sidebar.selectbox('Analysis', options=MENU_OPTIONS)
 
-        text = """# Notice: Analysis unter construction 🚧
-This analysis on trends in groundwater temperature is currently being revised. Formerly, the temperature data was used from the water quality dataset. In the meantime, a new dataset has been published on the [OGD portal](https://data.bs.ch/explore/dataset/100181/). This data is currently being included in the report, and the analysis will be republished shortly.""" 
-        # st.markdown(text)
         if menu_item == MENU_OPTIONS[0]:
             self.report()
         elif menu_item == MENU_OPTIONS[1]:

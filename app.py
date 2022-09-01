@@ -9,14 +9,13 @@ import water_quality
 #articles
 import temperature 
 import nitrate
-__version__ = '0.0.12'
+__version__ = '0.1.0'
 __author__ = 'Lukas Calmbach'
 __author_email__ = 'lcalmbach@gmail.com'
-VERSION_DATE = '2022-08-30'
+VERSION_DATE = '2022-09-01'
 GIT_REPO = 'https://github.com/lcalmbach/gw-temp-bs'
 APP_NAME = 'groundwater.bs'
 APP_ICON = "💧"
-
 
 MENU_OPTIONS = ['About', 'Borehole records', 'Water level monitoring', 'Water quality monitoring', 'Analysis/Reports']
 MENU_ANALYSIS = ['Temperature Trend', 'Nitrate in Groundwater']
@@ -30,12 +29,21 @@ APP_INFO = f"""<div style="background-color:powderblue; padding: 10px;border-rad
     """
 
 def get_article():
-    article = st.sidebar.selectbox('Select a report', options=MENU_ANALYSIS)
-    if article==MENU_ANALYSIS[0]:
-        app = temperature.Analysis()
-    elif article==MENU_ANALYSIS[1]:
-        app = nitrate.Analysis()
+    
+    default =  int( st.session_state.args['index'][0]) if 'index' in st.session_state.args and st.session_state.calls==0 else 0
+    article = st.sidebar.selectbox('Select a report', options=MENU_ANALYSIS, index=default)
+    if st.session_state.args != {} and st.session_state.calls == 0:
+        if st.session_state.args['index'][0] == '0':
+            app = temperature.Analysis()
+        else:
+            app = nitrate.Analysis()
+    else:
+        if article==MENU_ANALYSIS[0]:
+            app = temperature.Analysis()
+        else:
+            app = nitrate.Analysis()
     return app
+
 
 def main():
     st.set_page_config(
@@ -44,18 +52,26 @@ def main():
         layout="wide")
     st.sidebar.markdown(f"## <center>{APP_NAME}</center>", unsafe_allow_html=True) 
     helper.show_lottie(LOTTIE_URL)
-    menu_item = st.sidebar.selectbox('Menu', options=MENU_OPTIONS)
-    if menu_item==MENU_OPTIONS[0]:
-        app = About()
-    elif menu_item==MENU_OPTIONS[1]:
-        app = well_records.Analysis()
-    elif menu_item==MENU_OPTIONS[2]:
-        app = water_levels.Analysis()
-    elif menu_item==MENU_OPTIONS[3]:
-        app = water_quality.Analysis()
-    elif menu_item==MENU_OPTIONS[4]:
-        app = get_article()
     
+    st.session_state.args = st.experimental_get_query_params()
+    if not('calls' in st.session_state):
+        st.session_state.calls = 0
+    
+    menu_item = st.sidebar.selectbox('Menu', options=MENU_OPTIONS)
+    if st.session_state.args != {} and st.session_state.calls == 0:
+        app = get_article()
+    else:
+        if menu_item==MENU_OPTIONS[0]:
+            app = About()
+        elif menu_item==MENU_OPTIONS[1]:
+            app = well_records.Analysis()
+        elif menu_item==MENU_OPTIONS[2]:
+            app = water_levels.Analysis()
+        elif menu_item==MENU_OPTIONS[3]:
+            app = water_quality.Analysis()
+        elif menu_item==MENU_OPTIONS[4]:
+            app = get_article()
+    st.session_state.calls += 1
     app.show_menu()
     st.sidebar.markdown(APP_INFO, unsafe_allow_html=True)
 
