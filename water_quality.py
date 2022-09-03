@@ -91,7 +91,6 @@ class Analysis():
 
     def show_parameters(self):
         def get_settings():
-            settings = {}
             ymin, ymax = 0,0
             with st.sidebar.expander("⚙️Settings",expanded=True):
                 self.settings['show_time_series']=st.checkbox("Show time series plot", help='Plots show only, if at least one station is selected in the filter section')
@@ -132,7 +131,7 @@ class Analysis():
             filename = f"{parameter}.csv"
             st.markdown(helper.get_table_download_link(df, filename), unsafe_allow_html=True)
             if self.settings['show_time_series'] and filter['sel_stations']:
-                cfg = {'x': 'date', 'y': 'value_num', 'color': 'station_id:N', 'tooltip':['station_id', 'date','value'], 
+                cfg = {'x': 'date', 'y': 'value_num', 'color': 'station_id', 'tooltip':['station_id', 'date','value'], 
                     'x_title': '', 'y_title':parameter, 'width':1000, 'height':400, 'title': parameter, 'symbol_size':40}
                 if 'y_domain' in self.settings:
                     cfg['y_domain'] = self.settings['y_domain']
@@ -142,7 +141,7 @@ class Analysis():
             if self.settings['show_map']:
                 df = df[['station_id','value_num']].groupby(['station_id']).agg(self.settings['map_aggregation']).reset_index()
                 df = pd.merge(df, self.well_records, how='left', left_on=['station_id'], right_on=['laufnummer'])
-                settings = {'lat':'lat','long':'long','value_col':'value_num', 'min_val':0,'max_val':10,'station_id':'station_id',
+                settings = {'lat':'lat','long':'long','value_col':'value_num', 'station_col':'station_id', 'min_val':0,'max_val':10,'station_id':'station_id',
                     'size':50, 'tooltip_html' : f"""<b>Station:</b> {{}}<br/><b>{parameter}:</b> {{}}<br/>"""}
                 plots.plot_colormap(df, settings)
 
@@ -165,7 +164,6 @@ class Analysis():
                 
                 if options.index(sel_geology)>0:
                     df = df[df['geology']==sel_geology]
-
                 if sel_stations:
                     sel_stations=[str(x) for x in sel_stations]
                     df = df[df['laufnummer'].isin(sel_stations)]
