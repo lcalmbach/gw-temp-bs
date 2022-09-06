@@ -9,10 +9,10 @@ import water_quality
 #articles
 import temperature 
 import nitrate
-__version__ = '0.1.0'
+__version__ = '0.1.1'
 __author__ = 'Lukas Calmbach'
 __author_email__ = 'lcalmbach@gmail.com'
-VERSION_DATE = '2022-09-01'
+VERSION_DATE = '2022-09-6'
 GIT_REPO = 'https://github.com/lcalmbach/gw-temp-bs'
 APP_NAME = 'groundwater.bs'
 APP_ICON = "💧"

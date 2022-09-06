@@ -17,6 +17,7 @@ MIN_OBSERVATIONS_FOR_MK = 10
 FIGURE = 'fig'
 TABLE = 'tab'
 CURRENT_YEAR = int(date.today().strftime("%Y"))
+time_intervals = ['day','month','year']
 
 class Analysis():
     def __init__(self):
@@ -47,6 +48,11 @@ class Analysis():
         df.columns = ['date','stationid','value']
         df = df[df['value'] < 500]
         df['year'] = df['date'].dt.year
+        df['month'] = df['date'].dt.month
+        df['day'] = 15
+        df['month_date'] = pd.to_datetime(df[['year','month','day']])
+        cols=["year","month", "day"]
+        df['year_date'] = pd.to_datetime(df[cols].apply(lambda x: f"{x.year}-07-15", axis="columns"))
         return df
     
     @st.cache
@@ -140,13 +146,24 @@ class Analysis():
             show_rheinpegel = st.checkbox('Show Rhine water level plot', value=False)
             show_map = st.checkbox('Show station location on map', value=True)
             show_record = st.checkbox('Show well record', value=False)
+            aggregate_by = st.selectbox('Aggregate data by', options=time_intervals)
         
         if len(selected)>0:
             selected = selected.iloc[0]
             station_sel = selected['laufnummer']
             df = self.wl_data[(self.wl_data['stationid']==station_sel)]
             df = df[(df['year'].isin(range(start_year, end_year+1)))]
-            
+            # define how many days of missing data defines missing data and will interrupt the connection of data points
+            max_x_distance = 50
+            if time_intervals.index(aggregate_by)==1:
+                df = df.groupby(['stationid','month_date']).agg('value').mean().reset_index()
+                df.columns=['stationid','date','value']
+                max_x_distance = 100
+            elif time_intervals.index(aggregate_by)==2:
+                df = df.groupby(['stationid','year_date']).agg('value').mean().reset_index()
+                df.columns=['stationid','date','value']
+                max_x_distance = 400
+
             if len(df)>0:
                 settings={'title': f"{selected['street']} {selected['house_number']} ({station_sel})", 'x':'date', 'y':'value', 'tooltip':['date', 'value'], 
                     'width':1000, 'height': 300, 'x_title':'', 'y_title': 'WL elevation (masl)'}
@@ -154,7 +171,7 @@ class Analysis():
                 max_y = int(df['value'].max())+1
                 settings['y_domain'] = [min_y, max_y]
                 settings['x_domain'] = list(pd.to_datetime([date(start_year,1,1), date(end_year,12,31)]).astype(int) / 10 ** 6)
-                settings['max_x_distance'] = 30
+                settings['max_x_distance'] = max_x_distance 
                 plots.wl_time_series_chart(df, settings)
                 filename = f"{station_sel}_wl.csv"
                 st.markdown(helper.get_table_download_link(df, filename), unsafe_allow_html=True)

@@ -109,6 +109,11 @@ class Analysis():
 
 
         def show_values_grid(sel_parameter: dict, filter):
+            def get_compliant_legend():
+                text = """🟢   | compliant 
+🔴   | non compliant"""
+                return text
+
             parameter = sel_parameter.iloc[0]['parameter']
             df = self.wq_data[self.wq_data['parameter']==parameter]
             if filter['sel_stations']: 

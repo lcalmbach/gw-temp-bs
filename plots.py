@@ -11,17 +11,24 @@ import datetime
 ZOOM_START_DETAIL = 13
 
 def plot_colormap (df: pd.DataFrame, settings: dict):
-    def plot_legend(digits:int):
+    def get_auto_legend(digits:int):
 
-        text =f"""Legend | &nbsp; 
+        text = f"""Legend | &nbsp; 
 ------ | ------
 🟢   | {min.round(3)} - {((max-min) * 0.25).round(digits)} 
 🟡   | >{((max-min) * 0.25).round(digits)} - {((max-min) * 0.5).round(digits)}
 🟠   | >{((max-min) * 0.5).round(digits)} - {((max-min) * 0.75).round(digits)}
 🔴   | >{((max-min) * 0.75).round(digits)}"""
-        st.markdown(text, unsafe_allow_html=True)
+        return text
     
-    
+    def get_color_legend(digits:int):
+        text =f"""Legend | &nbsp; 
+------ | ------
+🟢   | compliant 
+🔴   | non compliant
+"""
+        return text
+
     def get_defaults(settings):
         if 'size' not in settings: settings['size'] = 20
         if 'tooltip_html' not in settings:
@@ -57,7 +64,10 @@ def plot_colormap (df: pd.DataFrame, settings: dict):
     ).add_to(m)
     folium_static(m)
     if 'colors' not in settings:
-        plot_legend(digits)
+        text = get_auto_legend(digits)
+    else:
+        text = get_color_legend(digits)
+    st.markdown(text, unsafe_allow_html=True)
 
 def plot_map(df: pd.DataFrame, settings: dict, categories: dict={}):
     #complete default settings where missing

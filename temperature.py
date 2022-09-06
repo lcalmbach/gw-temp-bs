@@ -294,11 +294,13 @@ class Analysis():
         # results
         result_table = get_result_table(averaged_data, station_data)
         trends = get_trends(result_table)
-        st.markdown(texts['result'].format(
-            trends['num'], 
-            trends['increasing'], 
-            trends['no_trend'], 
-            trends['decreasing']), unsafe_allow_html=True)
+        text = texts['result'].format(
+                tab_num,
+                trends['num'], 
+                trends['increasing'], 
+                trends['no_trend'], 
+                trends['decreasing'])
+        st.markdown(text, unsafe_allow_html=True)
         show_table1(result_table, averaged_data)
         tab_num = helper.show_legend(texts, TABLE, tab_num)
         
