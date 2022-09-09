@@ -196,7 +196,7 @@ class Analysis():
 
         df = self.well_records[cn.station_grid_fields]
         df = filter_stations(df)
-        cols={}
+        cols = {}
         
         settings = {'height':helper.get_auto_grid_height(df,400), 'selection_mode':'single', 'fit_columns_on_grid_load': False}
         st.markdown(f"**{len(df)} stations found**")

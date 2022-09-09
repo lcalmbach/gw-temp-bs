@@ -2,6 +2,7 @@
 
 ### Todo
 
+- change name of repo to groundwater-bs  
 - add help file  
 - compliant/non compliant legend option  
 - article on heavy metals  
@@ -12,10 +13,10 @@
 
 ### In Progress ···
 
-- write readme  
 
 ### Done ✓
 
 - article on nitrate  
 - groundwater plots: allow aggreegation by month, week, year  
+- write readme  
 

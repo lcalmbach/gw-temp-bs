@@ -12,13 +12,18 @@ ZOOM_START_DETAIL = 13
 
 def plot_colormap (df: pd.DataFrame, settings: dict):
     def get_auto_legend(digits:int):
-
-        text = f"""Legend | &nbsp; 
+        st.write(min,max)
+        if min == max:
+            text = f"""Legend | &nbsp; 
 ------ | ------
-🟢   | {min.round(3)} - {((max-min) * 0.25).round(digits)} 
-🟡   | >{((max-min) * 0.25).round(digits)} - {((max-min) * 0.5).round(digits)}
-🟠   | >{((max-min) * 0.5).round(digits)} - {((max-min) * 0.75).round(digits)}
-🔴   | >{((max-min) * 0.75).round(digits)}"""
+🟢   | {min.round(digits)}"""
+        else:
+            text = f"""Legend | &nbsp; 
+------ | ------
+🟢   | {min.round(digits)} - {(min + (max-min) * 0.25).round(digits)} 
+🟡   | >{(min + (max-min) * 0.25).round(digits)} - {(min + (max-min) * 0.5).round(digits)}
+🟠   | >{(min + (max-min) * 0.5).round(digits)} - {(min + (max-min) * 0.75).round(digits)}
+🔴   | >{(min + (max-min) * 0.75).round(digits)}"""
         return text
     
     def get_color_legend(digits:int):
