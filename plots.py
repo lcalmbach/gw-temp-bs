@@ -10,9 +10,10 @@ import datetime
 
 ZOOM_START_DETAIL = 13
 
-def plot_colormap (df: pd.DataFrame, settings: dict):
-    def get_auto_legend(digits:int):
-        st.write(min,max)
+
+def plot_colormap(df: pd.DataFrame, settings: dict):
+    def get_auto_legend(digits: int):
+        st.write(min, max)
         if min == max:
             text = f"""Legend | &nbsp; 
 ------ | ------
@@ -26,7 +27,7 @@ def plot_colormap (df: pd.DataFrame, settings: dict):
 🔴   | >{(min + (max-min) * 0.75).round(digits)}"""
         return text
     
-    def get_color_legend(digits:int):
+    def get_color_legend(digits: int):
         text =f"""Legend | &nbsp; 
 ------ | ------
 🟢   | compliant 
@@ -35,27 +36,28 @@ def plot_colormap (df: pd.DataFrame, settings: dict):
         return text
 
     def get_defaults(settings):
-        if 'size' not in settings: settings['size'] = 20
+        if 'size' not in settings:
+            settings['size'] = 20
         if 'tooltip_html' not in settings:
             settings['tooltip_html'] = """
             <b>Station:</b> {}<br/>           
             <b>Value:</b> {}<br/>"""
         return settings
     
-    df.dropna( subset=[settings['lat'], settings['long'], settings['value_col']], inplace=True)
-    df[[settings['lat'], settings['long']]] =df[[settings['lat'], settings['long']]] .astype(float)
+    df.dropna(subset=[settings['lat'], settings['long'], settings['value_col']], inplace=True)
+    df[[settings['lat'], settings['long']]] = df[[settings['lat'], settings['long']]] .astype(float)
     
     settings = get_defaults(settings)
-    midpoint = list(df[['lat','long']].mean())
+    midpoint = list(df[['lat', 'long']].mean())
     m = folium.Map(location=midpoint, width="%100", height="%100", zoom_start=ZOOM_START_DETAIL)
     digits = helper.get_digits(list(df[settings['value_col']]))
     df[settings['value_col']]=df[settings['value_col']].round(digits)
     if 'colors' not in settings:
         stats = df[settings['value_col']].agg(['mean','std', 'min', 'max'])
-        min=stats[0]-stats[1]*2 if stats[0]-stats[1]*2 > stats[2] else stats[2]
-        max=stats[0]+stats[1]*2 if stats[0]+stats[1]*2 < stats[3]  else stats[3]
-        colormap = folium.StepColormap(colors=['green','yellow','orange','red'], 
-            index=[min, (max-min) * 0.25, (max-min) * 0.5, (max-min) * 0.75, max], vmin=min, vmax=max)
+        min = stats[0]-stats[1]*2 if stats[0]-stats[1]*2 > stats[2] else stats[2]
+        max = stats[0]+stats[1]*2 if stats[0]+stats[1]*2 < stats[3] else stats[3]
+        colormap = folium.StepColormap(colors=['green', 'yellow', 'orange', 'red'], 
+            index = [min, (max-min) * 0.25, (max-min) * 0.5, (max-min) * 0.75, max], vmin=min, vmax=max)
     else:
         colormap = folium.StepColormap(colors=settings['colors'], index=settings['limits'], vmin=settings['limits'][0], vmax=settings['limits'][-1])
     for index, row in df.iterrows():
